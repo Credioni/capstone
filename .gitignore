@@ -2,7 +2,7 @@
 .DS_Store
 *.local
 *.log*
-
+.ipynb_checkpoints
 # Dist
 node_modules
 dist/
