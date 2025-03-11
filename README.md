@@ -1,41 +1,31 @@
 # Project Schedule
 
+
 | First Week    | Second Week   | Third Week   | Fourth Week |
 | ------------- | ------------- |------------- |-------------|
 | Content Cell  | Content       | Content      |  Content    |
 
 
-# Project 19: Trustworthy AI-Generated Code via Inductive and Deductive Reasoning
+1. Implement a basic text-based RAG model using LangChain.
+2. Enhance retrieval with multimodal embeddings (OpenAI CLIP for images, Whisper for audio
+transcripts).
+3. Use FAISS for vector-based retrieval of images, videos, and text data.
+4. Develop a research assistant UI that allows users to enter text queries and get relevant text,
+images, and video sources.
+5. Fine-tune retrieval strategies for scientific literature by integrating the arXiv dataset.
+6. Evaluate accuracy by comparing AI retrieval against traditional document search.
 
-AI-generated code lacks formal correctness guarantees, which can make it unreliable for critical applications. This project combines LLMs (**inductive models**) with formal verification tools (**deductive models**) to assess and improve AI-generated code quality.\
-The focus will be on automating code correctness checks through empirical analysis and formal verification methods.
-<br/><br/>
-**Task**
-<br/>
-Develop a lightweight AI-assisted coding assistant that generates Python or Java code and verifies
-its correctness using logical reasoning. This system will be useful for educational tools, secure
-software development, and automated bug detection.
-<br/><br/>
+# Project 17: Multimedia Large Language Model Applications with Multimedia Embedding RAG
 
-# How to start?
-1. Train a baseline image retrieval model using OpenAI CLIP.
-2. Use CodeLlama or StarCoder to generate Python or Java functions based on user prompts.
-3. Use Z3 theorem prover to check the logical correctness of AI-generated code.
-4. Implement static analysis tools (PyLint, SonarQube) to identify errors and code inefficiencies.
-5. Build a Streamlit or VS Code Extension where users input code prompts and see both AIgenerated code and its verification results.
-6. Compare verified vs. unverified AI-generated code, measuring error detection rate and
-efficiency.
-7. Adjust AI prompts and verification rules to improve correctness detection.
+## Basic Idea
+RAG models primarily focus on text-based retrieval, limiting their effectiveness in multimedia
+applications. This project enhances RAG with multimodal retrieval by incorporating image, video, and
+text embeddings. By integrating image and text embeddings in queries, the system enables faster and
+more efficient retrieval, even on low-bandwidth networks. The use of compact embeddings ensures
+quick access to relevant multimedia content, making AI-generated responses more contextually rich
+and diverse
 
+## Application
+Create a scientific research assistant that retrieves related text, images, and videos from academic
+papers.
 
-# Approach
- - Should we use python? Since their compiler produces errors in **runtime**? Using statically typed languages would be easier to debug.
- - Java, Rust?
-
-
-
-## Fine-Tuning & Datasets
- - LLM DeepSeek-R1
- - Datasets to be used
-## Formal Verification Tools
-## Empirical Testing
