@@ -11,6 +11,9 @@
 
     "esModuleInterop": true,
     "skipLibCheck": true,
+
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
   },
   "exclude": ["dist/"],
 }

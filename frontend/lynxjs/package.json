@@ -1,5 +1,5 @@
 {
-  "name": "capstone-interface",
+  "name": "lynxjs",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -8,9 +8,7 @@
     "preview": "rspeedy preview"
   },
   "dependencies": {
-    "@lynx-js/react": "^0.105.1",
-    "@lynx-js/web-core": "^0.7.1",
-    "@lynx-js/web-elements": "^0.3.0"
+    "@lynx-js/react": "^0.105.1"
   },
   "devDependencies": {
     "@lynx-js/qrcode-rsbuild-plugin": "^0.3.4",
