@@ -6,7 +6,7 @@
 # Dist
 node_modules
 dist/
-.lynx-devtool
+lynx-devtool
 # IDE
 .vscode/*
 !.vscode/extensions.json
