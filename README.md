@@ -3,7 +3,7 @@
 
 | First Week    | Second Week   | Third Week   | Fourth Week |
 | ------------- | ------------- |------------- |-------------|
-| Content Cell  | Content       | Content      |  Content    |
+| Planning      | Model + UI Skeletons | Creating python backend |  Polishing   |
 
 
 1. Implement a basic text-based RAG model using LangChain.
