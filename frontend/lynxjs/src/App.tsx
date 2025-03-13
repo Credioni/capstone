@@ -1,36 +1,41 @@
 // src/App.tsx
 import './App.css'
-import React, { useEffect } from 'react';
-import { useLynxGlobalEventListener } from '@lynx-js/react'
+import { useLynxGlobalEventListener, useState, useMainThreadRef } from '@lynx-js/react'
+import { MainThread } from "@lynx-js/types"
+
 import { FrontPage } from "./pages/FrontPage.tsx";
+import { MainThreadDraggable } from "./MainThreadTriggers.tsx";
+
+// { /* WEB ELEMENTS */}
+// import '@lynx-js/web-core';
+// import '@lynx-js/web-core/index.css';
+// const handleKeyDown = (event:any) => {
+//     console.log(`Key pressed: ${event.key}`);
+//   };
+// document.addEventListener("keydown", handleKeyDown);
 
 
 export function App() {
-    useEffect(() => {
-        // Check if we're in the browser environment
-        if (typeof window !== "undefined") {
-          const handleKeyPress = (event) => {
-            console.log('Key pressed:', event.key);
-            // Additional logic to handle the key press
-          };
+    let eleRef = useMainThreadRef<MainThread.Element>();
 
-          // Add event listener for keydown events
-          window.addEventListener('keydown', handleKeyPress);
-
-          // Clean up the event listener on component unmount
-          return () => {
-            window.removeEventListener('keydown', handleKeyPress);
-          };
-        }
-      }, []);
+    function handleTapMainThread() {
+      'main thread';
+      eleRef.current?.setStyleProperty('height', '30px');
+      console.log("MainThread Tap");
+    }
 
     return (
-        <view>
-            <view className='App'>
-                <view className='Background' />
-                <view className="App">
-                    <FrontPage />
-                </view>
+        <view className='App' main-thread:bindTap={handleTapMainThread}>
+            <view />
+            { /*
+            <MainThreadDraggable size={100} />
+            */ }
+            <view className='Background' />
+            <view className="App">
+                <FrontPage />
+            </view>
+            <view className='footer'>
+                <text> Footer </text>
             </view>
         </view>
     );

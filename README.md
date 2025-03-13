@@ -6,15 +6,6 @@
 | ✅Planning    | 🚧Model + UI Skeletons | Creating python backend |  Polishing   |
 
 
-1. Implement a basic text-based RAG model using LangChain.
-2. Enhance retrieval with multimodal embeddings (OpenAI CLIP for images, Whisper for audio
-transcripts).
-3. Use FAISS for vector-based retrieval of images, videos, and text data.
-4. Develop a research assistant UI that allows users to enter text queries and get relevant text,
-images, and video sources.
-5. Fine-tune retrieval strategies for scientific literature by integrating the arXiv dataset.
-6. Evaluate accuracy by comparing AI retrieval against traditional document search.
-
 # Project 17: Multimedia Large Language Model Applications with Multimedia Embedding RAG
 
 ## Basic Idea
@@ -29,3 +20,9 @@ and diverse
 Create a scientific research assistant that retrieves related text, images, and videos from academic
 papers.
 
+# Technologies Used
+## Frontend
+- [**Lynxjs-reach**](https://lynxjs.org) for web and cross-platform.
+
+## Backend
+- XXXXXXXXXX

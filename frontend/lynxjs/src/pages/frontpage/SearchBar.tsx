@@ -1,17 +1,18 @@
 import './SearchBar.css'
 import searchIcon from "./search-icon.svg";
+import { DragAndDrop } from '../../common/DragNDrop.tsx';
 import { useCallback, useEffect, useState, useLynxGlobalEventListener } from '@lynx-js/react'
 
 export function SearchBar() {
 
-
     return (
-        <view exposure-id='a' style={{
+        <view style={{
             alignItems: "center",
             justifyContent: "center",
             width: "100%",
             marginTop: "20px",
         }}>
+
             {/* Search container with rounded borders */}
             <view style={{
                 display: "flex",
@@ -49,27 +50,27 @@ export function SearchBar() {
                     }}
                 />
             </view>
-                {/* Search button */}
-                <view
-                    bindtap={() => console.log("Search button clicked")}
-                    style={{
-                        marginTop: "10px",
-                        marginLeft: "10px",
-                        paddingTop: "10px",
-                        height: "20px",
-                        width: "50px",
-                        backgroundColor: "#4A90E2", // Blue button
-                        color: "white",
-                        border: "none",
-                        borderRadius: "25px",
-                        fontSize: "0.9rem",
-                        fontWeight: "500",
-                        cursor: "pointer",
-                        transition: "background-color 0.2s ease",
-                    }}
-                >
-                    Search
-                </view>
+            {/* Search button */}
+            <view
+                //bindtap={handleKeyPress}
+                style={{
+                    marginTop: "2%",
+                    //marginLeft: "10px",
+                    //paddingTop: "10px",
+                    height: "3.5vh",
+                    width: "35%",
+                    backgroundColor: "#4A90E2", // Blue button
+                    color: "white",
+                    border: "none",
+                    borderRadius: "25px",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease",
+                }}
+            >
+                <text style={{alignSelf: "center", justifySelf: "center", position: "relative"}}>Search</text>
+            </view>
         </view>
     );
 };

@@ -7,12 +7,11 @@ const App = () => {
   return (
     <div style={{ height: '100vh' }}>
       <lynx-view
-          style={{ height: '100%', width: '100%' }}
-          url="/main.web.bundle"
+        style={{ height: '100%', width: '100%' }}
+        url="/main.web.bundle"
       ></lynx-view>
     </div>
   );
 };
 
 export default App;
-

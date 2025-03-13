@@ -2,6 +2,11 @@ import { defineConfig } from '@lynx-js/rspeedy';
 import { pluginReactLynx } from '@lynx-js/react-rsbuild-plugin';
 
 export default defineConfig({
+  // source: {
+  //   entry: {
+  //     "main-thread-draggable": "./src/MainThreadTriggers.tsx",
+  //   },
+  // },
   plugins: [pluginReactLynx()],
   environments: {
     web: {
@@ -9,8 +14,9 @@ export default defineConfig({
         assetPrefix: '/',
       },
     },
-    lynx: {},
+    //lynx: {},
   },
+
 });
 
 // import { defineConfig } from '@lynx-js/rspeedy'

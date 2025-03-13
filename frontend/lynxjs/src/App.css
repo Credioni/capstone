@@ -22,9 +22,19 @@
 
 .App {
   position: relative;
-  min-height: 100vh;
+  min-height: 95vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.footer {
+  background-color: #00000070;
+  position: relative;
+  justify-self:end;
+  justify-items: center;
+  align-items: center;
+  height: 5vh;
+  width: 100%;
 }
