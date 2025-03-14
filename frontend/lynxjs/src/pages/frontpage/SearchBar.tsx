@@ -1,9 +1,16 @@
+import { useState } from '@lynx-js/react'
 import './SearchBar.css'
 import searchIcon from "./search-icon.svg";
-import { DragAndDrop } from '../../common/DragNDrop.tsx';
-import { useCallback, useEffect, useState, useLynxGlobalEventListener } from '@lynx-js/react'
+import { Button } from './Button.tsx';
 
-export function SearchBar() {
+export function SearchBar({onsubmit}: any) {
+    const onSubmit = () => onsubmit(inputValue);
+
+    const [inputValue, setInputValue] = useState("");
+
+    const handleInput = (e: any) => {
+        setInputValue(e.detail.value);
+    };
 
     return (
         <view style={{
@@ -37,9 +44,14 @@ export function SearchBar() {
 
                 {/* Input field without its own border */}
                 <input
+                    value={inputValue}
+                    /* @ts-ignore */
+                    bindinput={handleInput}
                     type="text"
                     placeholder="Search..."
-                    user-select="none"
+                    inputMode='text'
+                    //user-select="none"
+
                     style={{
                         flex: 1,
                         fontSize: "1rem",
@@ -51,26 +63,7 @@ export function SearchBar() {
                 />
             </view>
             {/* Search button */}
-            <view
-                //bindtap={handleKeyPress}
-                style={{
-                    marginTop: "2%",
-                    //marginLeft: "10px",
-                    //paddingTop: "10px",
-                    height: "3.5vh",
-                    width: "35%",
-                    backgroundColor: "#4A90E2", // Blue button
-                    color: "white",
-                    border: "none",
-                    borderRadius: "25px",
-                    fontSize: "0.9rem",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    transition: "background-color 0.2s ease",
-                }}
-            >
-                <text style={{alignSelf: "center", justifySelf: "center", position: "relative"}}>Search</text>
-            </view>
+            <Button ontap={onSubmit}/>
         </view>
     );
 };

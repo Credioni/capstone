@@ -3,8 +3,35 @@
   --color-text: #fff;
 }
 
+.native-scroll {
+    overflow: auto; /* Default scrolling */
+    width: 100%;
+    height: 100%;
+}
+
+scroll-view::-webkit-scrollbar {
+    all: revert; /* Restores default scrollbar */
+}
+
+scroll-view {
+    scrollbar-width: auto; /* Firefox default */
+}
+/* scroll-view::-webkit-scrollbar {
+    width: 12px;
+}
+scroll-view::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+scroll-view::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+}
+scroll-view::-webkit-scrollbar-thumb:hover {
+    background: #555;
+} */
+
 .Background {
-  position: fixed;
+  /* position: fixed;
   background: radial-gradient(
     71.43% 62.3% at 46.43% 36.43%,
     rgba(18, 229, 229, 0) 15%,
@@ -13,28 +40,39 @@
   );
   box-shadow: 0px 12.93px 28.74px 0px #ffd28db2 inset;
   border-radius: 50%;
-  width: 200vw;
-  height: 200vw;
+  width: 100%;
+  height: 100%;
+  zoom: 200%;
   top: -60vw;
   left: -14.27vw;
-  transform: rotate(15.25deg);
+  transform: rotate(15.25deg); */
 }
 
-.App {
-  position: relative;
-  min-height: 95vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+
+.pageContainer {
+    /* align-items: center;
+    align-content: center;
+    justify-items: center;
+    justify-content: center; */
+    height: 100%;
+    width: 100%;
+}
+
+.Page {
+    /* position: relative;
+    width: 100vh;
+    min-height: 93vh;*/
+    align-items: center;
+    align-content: center;
+    justify-items: center;
+    justify-content: center;
 }
 
 .footer {
-  background-color: #00000070;
-  position: relative;
-  justify-self:end;
-  justify-items: center;
-  align-items: center;
-  height: 5vh;
-  width: 100%;
+    background-color: #ffffff8c;
+    position: fixed;
+    bottom: calc(-200px);
+    left: 0;
+    height: 200px;
+    width: 100%;
 }

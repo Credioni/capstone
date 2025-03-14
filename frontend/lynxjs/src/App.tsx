@@ -1,43 +1,25 @@
 // src/App.tsx
 import './App.css'
-import { useLynxGlobalEventListener, useState, useMainThreadRef } from '@lynx-js/react'
-import { MainThread } from "@lynx-js/types"
 
-import { FrontPage } from "./pages/FrontPage.tsx";
-import { MainThreadDraggable } from "./MainThreadTriggers.tsx";
-
-// { /* WEB ELEMENTS */}
-// import '@lynx-js/web-core';
-// import '@lynx-js/web-core/index.css';
-// const handleKeyDown = (event:any) => {
-//     console.log(`Key pressed: ${event.key}`);
-//   };
-// document.addEventListener("keydown", handleKeyDown);
-
-
-export function App() {
-    let eleRef = useMainThreadRef<MainThread.Element>();
-
-    function handleTapMainThread() {
-      'main thread';
-      eleRef.current?.setStyleProperty('height', '30px');
-      console.log("MainThread Tap");
+export function App({Page=null} : {Page: any}) {
+    function PageHTML(){
+        if (Page !== null) {
+            return <Page className='Page'/>
+        } else {
+            return <view className='Page'/>
+        }
     }
 
     return (
-        <view className='App' main-thread:bindTap={handleTapMainThread}>
-            <view />
-            { /*
-            <MainThreadDraggable size={100} />
-            */ }
-            <view className='Background' />
-            <view className="App">
-                <FrontPage />
+        <scroll-view style={{height:"100%", width:"100%"}} scroll-bar-enable enable-scroll>
+            <view className='pageContainer'>
+                <view className='Background' />
+                { PageHTML() }
             </view>
             <view className='footer'>
                 <text> Footer </text>
             </view>
-        </view>
+        </scroll-view>
     );
 }
 
