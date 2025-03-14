@@ -6,6 +6,11 @@
 | ✅Planning    | 🚧Model + UI Skeletons | Creating python backend |  Polishing   |
 
 
+```bash
+# Start frontend
+just dev
+```
+
 # Project 17: Multimedia Large Language Model Applications with Multimedia Embedding RAG
 
 ## Basic Idea
@@ -16,13 +21,13 @@ more efficient retrieval, even on low-bandwidth networks. The use of compact emb
 quick access to relevant multimedia content, making AI-generated responses more contextually rich
 and diverse
 
+## Requirements
+
 ## Application
 Create a scientific research assistant that retrieves related text, images, and videos from academic
 papers.
 
 # Technologies Used
 ## Frontend
-- [**Lynxjs-reach**](https://lynxjs.org) for web and cross-platform.
 
 ## Backend
-- XXXXXXXXXX
