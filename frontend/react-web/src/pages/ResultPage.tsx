@@ -39,45 +39,50 @@ function ResultPage() {
         fetchResults(query);
     }, [query]);
 
-        // Function to fetch results based on query
-        const fetchResults = async (searchTerm) => {
-            setLoading(true);
-            try {
-                // For demo purposes, check if contains "test"
-                if (searchTerm?.includes("test")) {
-                    setResults(SampleResults);
-                } else if (searchTerm) {
-                    // In a real app, you would fetch data from an API
-                    // const response = await api.search(searchTerm, category);
-                    // setResults(response.data);
+    // Function to fetch results based on query
+    const fetchResults = async (searchTerm) => {
+        setLoading(true);
+        try {
+            // For demo purposes, check if contains "test"
+            if (searchTerm?.includes("test")) {
+                setResults(SampleResults);
+            } else if (searchTerm) {
+                // In a real app, you would fetch data from an API
+                // const response = await api.search(searchTerm, category);
+                // setResults(response.data);
 
-                    // Simulating API call with timeout
-                    setTimeout(() => {
-                        setResults([]);
-                        setLoading(false);
-                    }, 500);
-                } else {
+                // Simulating API call with timeout
+                setTimeout(() => {
                     setResults([]);
-                }
-            } catch (error) {
-                console.error('Error fetching results:', error);
+                    setLoading(false);
+                }, 500);
+            } else {
                 setResults([]);
-            } finally {
-                setLoading(false);
             }
-        };
+        } catch (error) {
+            console.error('Error fetching results:', error);
+            setResults([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const navHome = (event) => {
+        event.preventDefault();
+        navigate(`/`);
+    }
 
     const handleSearch = (event) => {
         event.preventDefault();
         // In a real app, you would fetch results based on searchQuery
         console.log('Searching for:', searchQuery);
         navigate(`/search?q=${encodeURIComponent(searchQuery || "")}`);
-      };
+    };
 
       const handleResultClick = (id) => {
         console.log('Clicked on result:', id);
         // Navigate to detail page or perform other actions
-      };
+    };
 
     return (
         <div className='w-dvh min-h-dvh justify-items-center'>
@@ -85,11 +90,12 @@ function ResultPage() {
                 {/* Header control row */}
                 <div className='h-full grid grid-cols-3 place-items-center  bg-[#2c243c]'>
                     <Typography
+                        component="button"
                         sx={{color: "white"}}
                         className="justify-self-center"
                         variant="h5"
-                        component="h1"
                         gutterBottom
+                        onClick={navHome}
                     >
                         ArXiv RAG Search
                     </Typography>
@@ -134,7 +140,6 @@ function ResultPage() {
                     </Typography>
                 </Box>
             </div>
-            <Divider className='bg-gray-700'/>
 
             {/* Results */}
             <Box className="grid-flow-col grid-cols-${results.length} justify-items-center pt-5 max-w-5xl">
@@ -142,7 +147,7 @@ function ResultPage() {
                     {results.length > 0 ? (
                         results.map((result, index) => (
                             <ResultItem
-                                className="max-w-25 pb-2"
+                                // className="max-w-25 pb-2"
                                 key={index}
                                 index={index}
                                 result={result}

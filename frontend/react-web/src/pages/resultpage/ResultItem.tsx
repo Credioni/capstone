@@ -28,20 +28,10 @@ const DUMMYrightPanelData = {
         ],
       },
       {
-        title: "Pdf Files",
-        items: [
-          {
-            key: "Pdf",
-            type: "pdf",
-            value: PDFdummy,
-          },
-        ]
-      },
-      {
         title: "Audio Files",
         items: [
           {
-            key: "Music Track",
+            key: "Sound of Gravitation Waves of Black Hole",
             type: "audio",
             value: Sound,
           },
@@ -57,62 +47,63 @@ const DUMMYrightPanelData = {
 /**
  * InfoSection component displays a section with media items
  */
-const InfoSection = ({ title, items, onItemHover }) => {
+const InfoSection = ({ title, items, onItemHover, onItemClick }) => {
   // Get the appropriate icon based on media type
   const getItemIcon = (type) => {
     switch (type) {
       case 'image':
-        return <ImageIcon fontSize="small" sx={{ color: '#FFD700' }} />;
+        return <ImageIcon fontSize="small" sx={{ color: '#343243' }} />;
       case 'audio':
-        return <AudioFileIcon fontSize="small" sx={{ color: '#FFD700' }} />;
+        return <AudioFileIcon fontSize="small" sx={{ color: '#343243' }} />;
       case 'pdf':
-        return <PictureAsPdfIcon fontSize="small" sx={{ color: '#FFD700' }} />;
+        return <PictureAsPdfIcon fontSize="small" sx={{ color: '#343243' }} />;
       default:
-        return <ArticleIcon fontSize="small" sx={{ color: '#FFD700' }} />;
+        return <ArticleIcon fontSize="small" sx={{ color: '#343243' }} />;
     }
   };
 
-  return (
-    <div className="mb-3">
-      {/* Section header */}
-      {/* <div className="font-medium text-white py-1 px-2 bg-[#343243]">
-        {title}
-      </div> */}
+    return (
+        <div className='border-l-2 border-[#34324335]'>
+            {/* Section header */}
+            {/* <div className="font-medium text-white py-1 px-2 bg-[#343243]">
+            {title}
+            </div> */}
 
-      {/* Section content */}
-      <List dense disablePadding>
-        {items.map((item, idx) => (
-
-            <ListItem
-                key={idx}
-              className="pl-4 hover:bg-gray-100 cursor-pointer transition-colors"
-              onMouseEnter={(event) => onItemHover(item, event)}
-              onMouseMove={(event) => onItemHover(item, event)}
-              onClick={(event) => onItemHover(item, event)}
-              sx={{ borderBottom: '1px solid #e0e0e0' }}
-            >
-              <div className="mr-2">
-                {getItemIcon(item.type)}
-              </div>
-              <ListItemText
-                primary={item.key}
-                primaryTypographyProps={{
-                  className: "text-sm font-medium text-gray-800"
-                }}
-              />
-            </ListItem>
-        ))}
-      </List>
-    </div>
-  );
+            {/* Section content */}
+            <List dense disablePadding>
+                {items.map((item, idx) => (
+                    <ListItem dense disablePadding
+                        key={idx}
+                        className="hover:bg-gray-300 cursor-pointer transition-colors"
+                        onMouseEnter={(event) => onItemHover(item, event)}
+                        onMouseMove={(event) => onItemHover(item, event)}
+                        onClick={(event) => onItemClick(item, event)}
+                        // sx={{ borderBottom: '1px solid #e0e0e0' }}
+                    >
+                        <div className="mr-2">
+                            {getItemIcon(item.type)}
+                        </div>
+                        <ListItemText
+                            primary={item.key}
+                            // primaryTypographyProps={{
+                            //     className: "text-sm font-medium text-gray-800"
+                            // }}
+                        />
+                    </ListItem>
+                ))}
+            </List>
+        </div>
+    );
 };
 
 function ResultItemInfo({ info, ...args }) {
-    const [hoveredItem, setHoveredItem] = useState(null);
+    const [previewItem, setPreviewItem] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const [isPreviewFrozen, setIsPreviewFrozen] = useState(false);
 
     const handlePreviewChange = (item, event) => {
-        setHoveredItem(item);
+        if (isPreviewFrozen) { return }
+        setPreviewItem(item);
         // Get mouse position relative to the viewport
         setMousePosition({
             x: event.clientX,
@@ -120,15 +111,28 @@ function ResultItemInfo({ info, ...args }) {
         });
     };
 
+    const onClose = (item, event) => {
+        setIsPreviewFrozen(false);
+        handleMouseLeave();
+    };
+
+    const handleItemClick = (item, event) => {
+        // Freeze the preview at current position
+        handlePreviewChange(item, event);
+        setIsPreviewFrozen(!isPreviewFrozen);
+    };
+
     const handleMouseLeave = () => {
-        setHoveredItem(null);
+        if (!isPreviewFrozen){
+            setPreviewItem(null);
+        }
     };
 
     return (
         <div
             className="grid-flow-col m-2 relative"
-            {...args}
             onMouseLeave={handleMouseLeave}
+            {...args}
         >
             {/* Top title */}
             <div className="bg-[#343243] rounded-t-md p-2">
@@ -139,25 +143,28 @@ function ResultItemInfo({ info, ...args }) {
                         Article Content Embedded
                     </div>
                 </div>
-                <hr className="border-2 border-solid border-gray-600 w-[85%] ml-[14%]"/>
+                <hr className="border-l-2 border-solid border-gray-600 w-[85%] ml-[14%]"/>
             </div>
 
-            <List dense>
+            <List dense onMouseLeave={handleMouseLeave}>
                 {info.sections.map((item, idx) => (
                     <InfoSection
                         key={idx}
                         title={item.title}
                         items={item.items}
+                        onItemClick={handleItemClick}
                         onItemHover={(hoveredItem, event) => handlePreviewChange(hoveredItem, event)}
                     />
                 ))}
             </List>
 
             {/* Preview window that appears when hovering */}
-            {hoveredItem && (
+            {previewItem && (
                 <MediaPreview
-                    item={hoveredItem}
+                    item={previewItem}
                     position={mousePosition}
+                    isFrozen={isPreviewFrozen}
+                    onClose={onClose}
                 />
             )}
         </div>
@@ -180,37 +187,33 @@ function ResultCard({index, result, ...args }) {
   const [hoveredItem, setHoveredItem] = useState(null);
 
   return (
-    <Card className='flex flex-col border-black border-5' {...args} >
-        {/* Top title */}
-        <ResultCardTitle className="pl-4" index={index} doi={result.id} />
+    /* Result Card */
+    <Card className='flex border-black border-5' {...args} >
+        {/* Left Side */}
+        <div className="flex-1 flex flex-col">
+            {/* Top title */}
+            <ResultCardTitle className="pl-4" index={index} doi={result.id} />
 
-        {/* Main content */}
-        <div className="flex pl-4 pb-4">
-            {/* Article Information */}
-            <div className="flex-1 w-8/12 pr-4">
-                <Typography gutterBottom variant="h6" component="div">
-                    { result.title }
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    { result.abstract }
-                </Typography>
+            {/* Main Content */}
+            <div className="flex pl-4 pb-4">
+                {/* Article Information */}
+                <div className="flex-1 pr-4">
+                    <Typography gutterBottom variant="h6" component="div">
+                        { result.title }
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        { result.abstract }
+                    </Typography>
+                </div>
             </div>
-
-            {/* Article Multimedia Preview - Fixed width container */}
-            {/* <div className="w-4/12" style={{ minWidth: '200px' }}>
-                <Divider orientation='vertical' sx={{ position: 'absolute', height: '80%' }} />
-                <Box sx={{ pl: 2 }}>
-                <MediaPreview item={hoveredItem} />
-                </Box>
-            </div> */}
-
-            {/* Right Bar Content Info */}
-            <ResultItemInfo
-                className='ml-5 mr-2 w-4/12 max-w-80'
-                info={DUMMYrightPanelData}
-                onPreviewChange={setHoveredItem}
-            />
         </div>
+
+        {/* Right Side - Info */}
+        <ResultItemInfo
+            className='flex-2 ml-5 mr-2 max-w-70'
+            info={DUMMYrightPanelData}
+            // onPreviewChange={setHoveredItem}
+        />
     </Card>
   );
 }
