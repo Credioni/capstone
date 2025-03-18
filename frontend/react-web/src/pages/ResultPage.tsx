@@ -14,20 +14,34 @@ import {
     Select,
     MenuItem,
     List,
-    ListItem
+    ListItem,
+    Button
   } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SearchIcon from '@mui/icons-material/Search';
 import { SampleResults } from '../assets/SampleResults';
 import ResultItem from './resultpage/ResultItem';
 import {SearchBar} from "./resultpage/SearchBar"
+import { FetchData } from '../services/RagApi';
 
 
+function AnswerTypography({ text, ...args }) {
+    return (
+        <Typography
+            variant="body1"
+            style={{ whiteSpace: 'pre-line' }}
+            {...args}
+        >
+            { text ? text.split("Structured Answer:")[1]: "" }
+        </Typography>
+    );
+};
 
 function ResultPage() {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q');
     const navigate = useNavigate();
+    const [answer, setAnswer] = useState(query?.includes("test") ? "Hello world!":null);
     const [results, setResults] = useState(query?.includes("test") ? SampleResults:[]);
     const [category, setCategory] = useState('all');
     const [searchQuery, setSearchQuery] = useState(query);
@@ -36,32 +50,36 @@ function ResultPage() {
     useEffect(() => {
         setSearchQuery(query);
 
-        fetchResults(query);
+        fetchResults(searchQuery);
     }, [query]);
 
     // Function to fetch results based on query
-    const fetchResults = async (searchTerm) => {
+    async function fetchResults(searchTerm) {
+        console.log("Fetching result");
+
         setLoading(true);
         try {
-            // For demo purposes, check if contains "test"
             if (searchTerm?.includes("test")) {
+                // For demo purposes, check if contains "test"
                 setResults(SampleResults);
             } else if (searchTerm) {
-                // In a real app, you would fetch data from an API
-                // const response = await api.search(searchTerm, category);
-                // setResults(response.data);
+                let path = `http://localhost:8080/query?q=${encodeURIComponent(query || "")}`;
+                console.log("path", path)
+                const response = await FetchData(path);
+                console.log("response", response.answer)
+                setAnswer(response?.answer);
 
                 // Simulating API call with timeout
                 setTimeout(() => {
-                    setResults([]);
+                    setResults(null);
                     setLoading(false);
                 }, 500);
             } else {
-                setResults([]);
+                setResults(null);
             }
         } catch (error) {
             console.error('Error fetching results:', error);
-            setResults([]);
+            setResults(null);
         } finally {
             setLoading(false);
         }
@@ -111,6 +129,10 @@ function ResultPage() {
                         <Divider className='bg-gray-900' orientation='vertical'/>
                         <HelpOutlineIcon/>
                         <Typography> Syntax </Typography>
+
+                        <Button onClick={() => console.log("results", results)}>
+                            Query
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -136,15 +158,18 @@ function ResultPage() {
                 {/* Results count */}
                 <Box className="justify-self-left ml-(50%)" sx={{ mb: 2 }}>
                     <Typography variant="subtitle1" color="text.secondary">
-                        Found {results.length} results
+                        Found {results?.length | 0 } results
                     </Typography>
                 </Box>
             </div>
 
             {/* Results */}
             <Box className="grid-flow-col grid-cols-${results.length} justify-items-center pt-5 max-w-5xl">
+                {/* Generated RAG LLM answer */}
+                <AnswerTypography text={answer}/>
+
                 <List sx={{ listStyle: "decimal", pl: 4 }}>
-                    {results.length > 0 ? (
+                    {results?.length > 0 ? (
                         results.map((result, index) => (
                             <ResultItem
                                 // className="max-w-25 pb-2"

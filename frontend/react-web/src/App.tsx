@@ -9,7 +9,7 @@ function App(Content: any) {
     return (
         <div className="app-container">
             {/* <div className="Background" /> */}
-            {/* <div className="GrainOverlay" /> */}
+            <div className="GrainOverlay" />
             {/* <AnimatedNoise seedInterval={1000} className="GrainOverlay" /> */}
 
             {/* Main content area with centered search */}

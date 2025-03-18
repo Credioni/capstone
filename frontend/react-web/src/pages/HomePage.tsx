@@ -9,7 +9,7 @@ function HomePage() {
     return (
         <main className="homepage-content">
             <div className="logo-area">
-                <h1 className="logo">Welcome to ArXiv API</h1>
+                <h1 className="logo">Welcome to ArXiv RAG Search</h1>
             </div>
             <SearchBar />
             <QuicLinks />

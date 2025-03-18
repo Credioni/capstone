@@ -22,6 +22,7 @@ quick access to relevant multimedia content, making AI-generated responses more 
 and diverse
 
 ## Requirements
+ - Node.js
 
 ## Application
 Create a scientific research assistant that retrieves related text, images, and videos from academic
