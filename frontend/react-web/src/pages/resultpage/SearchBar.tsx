@@ -25,9 +25,16 @@ export function SearchBar({searchQuery, setSearchQuery, handleSearch, ...props}:
                 fullWidth
                 placeholder="Search articles..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
                 variant="outlined"
                 size="small"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log("Hello");
+                        handleSearch(e);
+                    }
+                }}
                 // InputProps={{
                 //     endAdornment: (
                 //     <InputAdornment position="end">

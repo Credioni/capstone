@@ -13,3 +13,5 @@ lynx-devtool
 !.vscode/extensions.json
 .idea
 data
+log
+tmp

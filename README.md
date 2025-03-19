@@ -3,7 +3,7 @@
 
 | First Week    | Second Week   | Third Week   | Fourth Week |
 | ------------- | ------------- |------------- |-------------|
-| ✅Planning    | 🚧Model + UI Skeletons | Creating python backend |  Polishing   |
+| ✅Planning    | ✅Model + UI Skeletons | ✅Integration |  🚧Polishing   |
 
 
 ```bash
@@ -22,7 +22,10 @@ quick access to relevant multimedia content, making AI-generated responses more 
 and diverse
 
 ## Requirements
- - Node.js
+Frontend
+```
+pip install faiss-cpu torch transformers sentence-transformers langchain langchain_huggingface pypdf pydantic pillow robyn colorlog
+```
 
 ## Application
 Create a scientific research assistant that retrieves related text, images, and videos from academic
