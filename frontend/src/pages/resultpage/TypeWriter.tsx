@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, Typography, Button, Box } from '@mui/material';
 
-const TypewriterText = ({ text, typingSpeed = 30, maxChars = 300, ...args }) => {
+const TypewriterText = ({ text, typingSpeed = 30, ...args }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const [showFull, setShowFull] = useState(false);
+  const [showRawText, setShowRawText] = useState(false);
 
   useEffect(() => {
     // Reset state when text changes
     setDisplayedText('');
     setCurrentIndex(0);
     setIsComplete(false);
-    setShowFull(false);
+    setShowRawText(false);
   }, [text]);
 
   useEffect(() => {
@@ -32,37 +32,52 @@ const TypewriterText = ({ text, typingSpeed = 30, maxChars = 300, ...args }) => 
     }
   }, [text, currentIndex, typingSpeed]);
 
-  const fullText = text ? (text.split("</think>")[1] || text) : '';
-  const isTruncated = fullText.length > maxChars;
+  // Determine if text contains a </think> tag
+  const hasThinkTag = text && text.includes("</think>");
 
-  // Determine what text to show based on showFull state and animation completion
-  const textToShow = () => {
+  // What to display based on animation state and showRawText toggle
+  const textToDisplay = () => {
     if (!isComplete) {
       return displayedText;
     }
 
-    if (showFull || !isTruncated) {
-      return fullText;
+    if (showRawText) {
+      // Make sure we get the entire raw text with consistent formatting
+      return text || '';
     }
 
-    return fullText.slice(0, maxChars) + '...';
+    // Show just the processed part with consistent formatting
+    return text?.split("</think>")[1] || text || '';
   };
 
   return (
     <Card {...args} sx={{ width: '100%', minWidth: 'fit-content' }}>
-      <CardContent>
-        <Typography variant="h6" component="div">
-          {textToShow()}
+      <CardContent sx={{ width: '100%' }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            width: '100%',
+            wordBreak: 'break-word',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          {textToDisplay().split('\n').map((line, index, array) => (
+            <React.Fragment key={index}>
+              {line}
+              {index < array.length - 1 && <br />}
+            </React.Fragment>
+          ))}
         </Typography>
 
-        {isComplete && isTruncated && (
+        {isComplete && hasThinkTag && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
             <Button
               variant="outlined"
               size="small"
-              onClick={() => setShowFull(!showFull)}
+              onClick={() => setShowRawText(!showRawText)}
             >
-              {showFull ? "Show less" : "Show more"}
+              {showRawText ? "Show less" : "Show all"}
             </Button>
           </Box>
         )}
@@ -83,5 +98,4 @@ const TypewriterText = ({ text, typingSpeed = 30, maxChars = 300, ...args }) => 
   );
 };
 
-export default TypewriterText;
 export default TypewriterText;

@@ -2,14 +2,17 @@ import React from 'react';
 import { Paper, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
+import PushPin from '@mui/icons-material/PushPin';
+import PushPinOutlined from '@mui/icons-material/PushPinOutlined';
+
 /**
  * MediaPreview component displays different types of media
  * based on the hovered item
  */
 const MediaPreview = ({ item, position, onClose=null, isFrozen=false }) => {
-  if (!item) return null;
+    if (!item) return null;
 
-  return (
+    return (
         /* Render content */
         <Paper
             elevation={3}
@@ -24,15 +27,15 @@ const MediaPreview = ({ item, position, onClose=null, isFrozen=false }) => {
             top: `${position.y}px`         // Top corner at cursor position
             }}
         >
-            {isFrozen && (
-                <button
-                    onClick={onClose}
-                    className="text-black hover:text-red-300 focus:outline-none"
-                    style={{fontSize: '18px', fontWeight: 'bold', lineHeight: 1 }}
-                >
-                    <CloseIcon/>
-                </button>
-            )}
+
+            <button
+                onClick={onClose}
+                className="text-black hover:text-red-300 focus:outline-none"
+                style={{fontSize: '18px', fontWeight: 'bold', lineHeight: 1 }}
+            >
+                {isFrozen ? <PushPin/>: <PushPinOutlined/> }
+            </button>
+
 
             {renderMediaContent(item)}
         </Paper>

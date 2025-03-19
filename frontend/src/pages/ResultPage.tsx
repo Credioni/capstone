@@ -80,10 +80,10 @@ function ResultPage() {
     function GenerateResultsAndAnswer(raw_response) {
         const sources: [] = raw_response.sources;
 
-        let parsed_results = [];
+        let parsed_results: any[] = [];
         for (let i = 0; i < sources.length; i++) {
             const tmp: any = sources[i];
-            const asd = {
+            const asd: any = {
                 id: tmp.paper_id,
                 title: "Fast-response low power atomic oven for integration into an ion microchip",
                 authors: ["Vijay Kumar", "Martin Siegele-Brown", "Parsa Rahimi", "Matthew Aylett", "Sebastian Weidt", "Winfried Karl Hensinger"],
@@ -102,8 +102,6 @@ function ResultPage() {
 
     // Function to fetch results based on query
     async function fetchResults(searchTerm) {
-        console.log("Fetching result");
-
         setLoading(true);
         try {
             if (searchTerm?.includes("test")) {
