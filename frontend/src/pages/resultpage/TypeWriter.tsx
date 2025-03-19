@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, Typography, Button, Box } from '@mui/material';
 
-
-// Usage:
-// <TypewriterText text={yourText} typingSpeed={50} />
-const TypewriterText = ({ text, typingSpeed = 30, ...args }) => {
+const TypewriterText = ({ text, typingSpeed = 30, maxChars = 300, ...args }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [showFull, setShowFull] = useState(false);
 
   useEffect(() => {
     // Reset state when text changes
     setDisplayedText('');
     setCurrentIndex(0);
     setIsComplete(false);
+    setShowFull(false);
   }, [text]);
 
   useEffect(() => {
     if (!text) return;
 
-    const contentToType = text.split("</think>")[1] || '';
+    const contentToType = text.split("</think>")[1] || text;
 
     if (currentIndex < contentToType.length) {
       const timer = setTimeout(() => {
@@ -33,12 +32,41 @@ const TypewriterText = ({ text, typingSpeed = 30, ...args }) => {
     }
   }, [text, currentIndex, typingSpeed]);
 
+  const fullText = text ? (text.split("</think>")[1] || text) : '';
+  const isTruncated = fullText.length > maxChars;
+
+  // Determine what text to show based on showFull state and animation completion
+  const textToShow = () => {
+    if (!isComplete) {
+      return displayedText;
+    }
+
+    if (showFull || !isTruncated) {
+      return fullText;
+    }
+
+    return fullText.slice(0, maxChars) + '...';
+  };
+
   return (
     <Card {...args} sx={{ width: '100%', minWidth: 'fit-content' }}>
       <CardContent>
         <Typography variant="h6" component="div">
-          {displayedText}
+          {textToShow()}
         </Typography>
+
+        {isComplete && isTruncated && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowFull(!showFull)}
+            >
+              {showFull ? "Show less" : "Show more"}
+            </Button>
+          </Box>
+        )}
+
         <Typography
           variant="body1"
           sx={{
@@ -55,5 +83,5 @@ const TypewriterText = ({ text, typingSpeed = 30, ...args }) => {
   );
 };
 
-
+export default TypewriterText;
 export default TypewriterText;

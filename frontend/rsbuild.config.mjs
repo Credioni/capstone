@@ -11,9 +11,14 @@ export default defineConfig({
   ],
   output: {
     publicPath: '/',
+    cleanDistPath: true,
   },
   source: {
     assetsInclude: /\.pdf$/,
+    alias: {
+      // Ensure paths are correct after project move
+      '@': './src',
+    },
   },
   tools: {
     postcss: {},

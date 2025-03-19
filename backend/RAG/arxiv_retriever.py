@@ -183,7 +183,7 @@ class ArXivRetriever(BaseRetriever, BaseModel):
         Returns:
             A list of relevant documents
         """
-        logger.warn(f"        {kwargs = }")
+        logger.warning(f"        {kwargs = }")
 
         k = kwargs.get("k", 3)
         logger.info(f"Retrieving {k} documents for query: {query}")
@@ -243,3 +243,4 @@ class ArXivRetriever(BaseRetriever, BaseModel):
             logger.error(f"Error retrieving documents: {e}")
             # Return an empty list in case of error
             return []
+

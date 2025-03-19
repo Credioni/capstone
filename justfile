@@ -8,7 +8,7 @@ run-back:
 
 # Run frontend with dev mode
 dev-front:
-    cd frontend/react-web | pnpm run dev
+    cd frontend | pnpm run dev
 
 clear:
     rd /s /q node_modules | del package-lock.json
