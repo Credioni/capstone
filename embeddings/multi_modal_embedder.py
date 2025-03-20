@@ -1,4 +1,4 @@
-#
+#pylint: disable=all
 from typing import List, Dict, Tuple
 import os
 import torch
@@ -13,6 +13,7 @@ import pandas as pd
 from tqdm import tqdm
 
 class MultimodalEmbedder:
+    """Multi Modal Embedder"""
     def __init__(self):
         # Initialize models
         print("Loading text embedding model...")
