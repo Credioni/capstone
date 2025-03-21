@@ -529,7 +529,7 @@ if __name__=="__main__":
             }
         ]
 
-        # Example images (paths would be different in your system)
+        # Example images
         images = [
             {
                 "id": 1,
@@ -539,9 +539,9 @@ if __name__=="__main__":
             },
         ]
 
-        # Example YouTube videos related to academic research
+        # Example YouTube videos
         youtube_videos = [
-            "eMlx5fFNoYc",  # Attention in transformers, step-by-step | 3B1B
+            "eMlx5fFNoYc",
         ]
 
         # Index content
