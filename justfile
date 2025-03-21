@@ -7,8 +7,8 @@ build-faiss:
     cd backend/RAGembedder | py -3.12 .\build.py
 
 # Zero-shot to test that embeddings work
-zero-shot-faiss:
-    cd backend/RAGembedder | py -3.12 .\zero-shot.py
+zero-shot:
+    cd backend/RAGembedder | py -3.12 .\zero_shot.py
 
 # Run backend with dev mode
 run-back:

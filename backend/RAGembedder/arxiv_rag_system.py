@@ -1,27 +1,28 @@
-#pylint: disable=E0110,E0611,W1203
-import os
+#pylint: disable=all
+import json
 import logging
 import glob
+import traceback
 import torch
+from typing import Dict, Optional
 from langchain_huggingface import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from PIL import Image
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from .arxiv_retriever import ArXivRetriever
-
-
+from .multi_modal_embedder import MultimodalEmbedder
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 class ArXivRAGSystem:
     """
-    A RAG (Retrieval-Augmented Generation) system for arXiv papers
-    and multi-media scientific content.
+    An enhanced RAG (Retrieval-Augmented Generation) system for arXiv papers
+    and multi-media scientific content with improved prompt engineering and
+    error handling.
     """
 
-    def __init__(self, config):
+    def __init__(self, _config: Dict[str, str]=None):
         """
         Initialize the RAG system with the given configuration.
 
@@ -31,57 +32,84 @@ class ArXivRAGSystem:
                 - mapping_path: Path to the document mapping file
                 - projection_path: Path to the projection model file
                 - image_folder: Path to the folder containing images
+                - use_mm_embedder: Whether to use the multimodal embedder (default: False)
         """
-        self.config = config
+        #self.config = config
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Using device: {self.device}")
 
         # Initialize components
-        self.retriever = self._initialize_retriever()
-        self.llm = self._initialize_llm()
-        self.qa_chain = self._create_qa_chain()
+        # if self.config.get("use_mm_embedder", False):
+        #     logger.info("Using Multimodal Embedder")
+        #     self.mm_embedder = self._initialize_mm_embedder()
+        #     self.retriever = None
+        # else:
+        #     logger.info("Using ArXiv Retriever")
+        #     self.mm_embedder = None
+        #     self.retriever = self._initialize_retriever()
 
-    def _initialize_retriever(self):
-        """Initialize the document retriever."""
+        self.llm = self._initialize_llm()
+        # self.qa_chain = self._create_qa_chain()
+
+    def _initialize_mm_embedder(self) -> MultimodalEmbedder:
+        """Initialize the multimodal embedder."""
         try:
-            retriever = ArXivRetriever(
-                index_path=self.config['faiss_index_path'],
-                mapping_path=self.config['mapping_path'],
-                projection_path=self.config['projection_path'],
-                image_folder=self.config['image_folder'],
-                device=self.device
-            )
-            logger.info("Initialized ArXiv retriever")
-            return retriever
+            embedder = MultimodalEmbedder()
+            embedder.load_indices()
+            logger.info("Initialized Multimodal Embedder")
+            return embedder
         except Exception as e:
-            logger.error(f"Failed to initialize retriever: {e}")
+            logger.error(f"Failed to initialize multimodal embedder: {e}")
             raise
 
+    # def _initialize_retriever(self) -> ArXivRetriever:
+    #     """Initialize the arXiv document retriever."""
+    #     try:
+    #         retriever = ArXivRetriever(
+    #             index_path=self.config['faiss_index_path'],
+    #             mapping_path=self.config['mapping_path'],
+    #             projection_path=self.config['projection_path'],
+    #             image_folder=self.config['image_folder'],
+    #             device=self.device
+    #         )
+    #         logger.info("Initialized ArXiv retriever")
+    #         return retriever
+    #     except Exception as e:
+    #         logger.error(f"Failed to initialize retriever: {e}")
+    #         raise
+
     def _initialize_llm(self):
-        """Initialize the language model."""
-        # Use phi-2 model for generation (smaller memory footprint)
-        # self.model_name = "microsoft/phi-2"
+        """Initialize the language model with optimized settings."""
         self.model_name = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-        # self.model_name = "gpt2"
 
         try:
-            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            tokenizer = AutoTokenizer.from_pretrained(
+                self.model_name,
+                trust_remote_code=True
+            )
+
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
                 device_map=self.device,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-                trust_remote_code=True
+                trust_remote_code=True,
+                # Add low_cpu_mem_usage for better performance on limited resources
+                low_cpu_mem_usage=True
             )
 
+            # Optimized generation parameters for DeepSeek models
             text_generation_pipeline = pipeline(
                 "text-generation",
                 model=model,
                 tokenizer=tokenizer,
-                max_new_tokens=300,
-                temperature=0.7,
-                top_p=0.9,
-                repetition_penalty=1.1,
-                do_sample=True
+                max_new_tokens=512,  # Increased for more detailed answers
+                temperature=0.5,  # Reduced for more focused responses
+                top_p=0.95,  # Slightly increased for more creativity while staying factual
+                repetition_penalty=1.15,  # Slightly increased to avoid repetition
+                do_sample=True,
+                # Added stopping criteria for better generation
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.eos_token_id
             )
 
             llm = HuggingFacePipeline(pipeline=text_generation_pipeline)
@@ -91,39 +119,8 @@ class ArXivRAGSystem:
             logger.error(f"Failed to initialize language model: {e}")
             raise
 
-    def _create_qa_chain(self):
-        """Create the question-answering chain."""
-        try:
-            prompt_template = """Generate a detailed answer to the question below using the provided context.
-            Include references to figures and papers where applicable.
 
-            Context:\n\n{context}
-
-            Question: {question}
-
-            Structured Answer:"""
-
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=self.llm,
-                chain_type="stuff",
-                retriever=self.retriever,
-                chain_type_kwargs={
-                    "prompt": PromptTemplate(
-                        template=prompt_template,
-                        input_variables=['context', 'question']
-                    ),
-                    "document_separator": "\n\n---\n\n"
-                },
-                return_source_documents=True
-            )
-
-            logger.info("Created question-answering chain")
-            return qa_chain
-        except Exception as e:
-            logger.error(f"Failed to create QA chain: {e}")
-            raise
-
-    def find_document_path(self, paper_id):
+    def find_document_path(self, paper_id: str) -> Optional[str]:
         """
         Find the document path for a given paper ID.
 
@@ -131,7 +128,7 @@ class ArXivRAGSystem:
             paper_id: The ID of the paper
 
         Returns:
-            The path to the PDF file
+            The path to the PDF file or None if not found
         """
         try:
             pdf_files = glob.glob(f"data/pdfs/{paper_id}.pdf")
@@ -142,15 +139,9 @@ class ArXivRAGSystem:
             logger.error(f"Error finding document path: {e}")
             return None
 
-    def clean_answer(self, text):
+    def clean_answer(self, text: str) -> str:
         """
-        Clean the generated answer by removing duplicate sentences.
-
-        Args:
-            text: The raw generated text
-
-        Returns:
-            The cleaned text with duplicate sentences removed
+        Clean the generated answer by removing duplicate content and fixing formatting.
         """
         # Split into sentences
         sentences = text.split('. ')
@@ -164,14 +155,154 @@ class ArXivRAGSystem:
                 seen.add(key)
                 unique.append(sent)
 
-        return '. '.join(unique)
+        # Join sentences back together
+        cleaned_text = '. '.join(unique)
+        # Fix any potential extra spaces or artifacts
+        cleaned_text = cleaned_text.replace('  ', ' ').strip()
 
-    def query(self, question, k=5, score_threshold=0.6):
+        return cleaned_text
+
+    # def mm_query(self, question: str, k: int = 5) -> Dict[str, any]:
+    #     """
+    #     Query using the multimodal embedder.
+
+    #     Args:
+    #         question: The question to answer
+    #         k: Number of documents to retrieve
+
+    #     Returns:
+    #         A dictionary containing answer and sources
+    #     """
+    #     logger.info(f"Processing multimodal query: {question}")
+
+    #     try:
+    #         # Query using the multimodal embedder
+    #         search_results = self.mm_embedder.search({"text": question}, k=k)
+
+    #         # Prepare context from search results
+    #         context_parts = []
+    #         sources = []
+    #         images = []
+
+    #         # Process text results
+    #         if "text" in search_results:
+    #             for item in search_results["text"]:
+    #                 context_parts.append(f"TEXT CONTENT (score={item['score']:.2f}):\n{item['text']}")
+    #                 sources.append({
+    #                     "type": "text",
+    #                     "score": item["score"],
+    #                     "content": item["text"],
+    #                     "title": item.get("title", ""),
+    #                     "source": item.get("source", "")
+    #                 })
+
+    #         # Process image results
+    #         if "image" in search_results:
+    #             for item in search_results["image"]:
+    #                 context_parts.append(f"IMAGE CAPTION (score={item['score']:.2f}):\n{item['caption']}")
+    #                 sources.append({
+    #                     "type": "image",
+    #                     "score": item["score"],
+    #                     "path": item["path"],
+    #                     "caption": item["caption"]
+    #                 })
+    #                 try:
+    #                     images.append({
+    #                         "path": item["path"],
+    #                         "caption": item["caption"],
+    #                         "image": Image.open(item["path"])
+    #                     })
+    #                 except Exception as e:
+    #                     logger.error(f"Error loading image {item['path']}: {e}")
+
+    #         # Process video results
+    #         if "video" in search_results:
+    #             for item in search_results["video"]:
+    #                 if item.get("transcript"):
+    #                     context_parts.append(f"VIDEO TRANSCRIPT (score={item['score']:.2f}):\n{item['transcript'][:500]}...")
+    #                 else:
+    #                     context_parts.append(f"VIDEO TITLE (score={item['score']:.2f}):\n{item['title']}")
+
+    #                 sources.append({
+    #                     "type": "video",
+    #                     "score": item["score"],
+    #                     "video_id": item["video_id"],
+    #                     "title": item.get("title", ""),
+    #                     "transcript": item.get("transcript", "")[:500] + "..." if item.get("transcript") else ""
+    #                 })
+
+    #         # Create full context
+    #         context = "\n\n---\n\n".join(context_parts)
+
+    #         # Generate response using the LLM
+    #         # Prepare the prompt
+    #         prompt = self._prepare_prompt(context, question)
+
+    #         # Generate using the LLM pipeline
+    #         inputs = {
+    #             "text": prompt,
+    #             "max_new_tokens": 512,
+    #             "do_sample": True,
+    #             "temperature": 0.5,
+    #             "top_p": 0.95
+    #         }
+
+    #         generated_response = self.llm(inputs)
+    #         answer = self.clean_answer(generated_response[0]['generated_text'])
+
+    #         logger.info("Multimodal query processing completed")
+    #         return {
+    #             "answer": answer,
+    #             "sources": sources,
+    #             "images": images
+    #         }
+
+    #     except Exception as e:
+    #         logger.error(f"Error processing multimodal query: {e}")
+    #         return {
+    #             "answer": f"An error occurred while processing your query: {str(e)}",
+    #             "sources": [],
+    #             "images": []
+    #         }
+
+    def _prepare_prompt(self, context:list, question: str) -> str:
         """
-        Query the RAG system with a question.
+        Prepare the prompt for the LLM.
+
+        Args:
+            context: The context information
+            question: The question to answer
+
+        Returns:
+            The formatted prompt
+        """
+        context = "\n\n" + "\n\n".join(context) + "\n\n"
+        return f"""<|im_start|>system
+You are a helpful, accurate, and concise research assistant specialized in scientific knowledge from arXiv papers. Your goal is to provide factual, well-structured answers based on the information provided.
+<|im_end|>
+<|im_start|>user
+I need a detailed and accurate answer to a scientific question. Please use only the provided context and don't make up information.
+Also reference to only one article based on provided context by it's number and title as you see best.
+CONTEXT_START
+{context}
+CONTEXT_END
+QUESTION:
+{question}
+<|im_end|>
+<|im_start|>assistant
+I'll answer the question based on the provided context, between the CONTEXT_START and CONTEXT_END.
+Each article is separated with number, followed by title, and next the abstract of the article.
+
+</think>
+"""
+
+    def query(self, question:str, context:list, k:int = 5, score_threshold:float = 0.6) -> Dict:
+        """
+        Query the RAG system with a question and optional context.
 
         Args:
             question: The question to answer
+            context: Optional pre-defined context to use instead of or in addition to retrieved content
             k: Number of documents to retrieve
             score_threshold: Threshold for filtering documents by score
 
@@ -182,58 +313,20 @@ class ArXivRAGSystem:
                 - images: Any images referenced in the sources
         """
         logger.info(f"Processing query: {question}")
+        logger.debug(f"Context provided:\n{context}")
 
         try:
-            # Query the QA chain
-            results = self.qa_chain.invoke(input=question, k=k)
+            # Create a prompt with the provided context
+            prompt = self._prepare_prompt(context, question)
 
-            # Log information about retrieved documents
-            logger.info(f"Retrieved {len(results['source_documents'])} documents")
-            for doc in results['source_documents']:
-                logger.debug(f"Document score: {doc.metadata['score']}, "
-                            f"Paper ID: {doc.metadata['paper_id']}")
+            # Generate using the LLM pipeline
+            generated_response = self.llm.invoke(prompt, max_new_tokens=512)
+            # answer = self.clean_answer(generated_response[0]['generated_text'])
+            logger.info("Generation completed processing completed")
+            logger.info(json.dumps(generated_response, indent=2))
 
-            # Process sources (lower distance = better match)
-            sources = []
-            for doc in results['source_documents']:
-                if doc.metadata['score'] < score_threshold:  # Keep good matches
-                    sources.append({
-                        "type": doc.metadata['type'],
-                        "paper_id": doc.metadata['paper_id'],
-                        "score": doc.metadata['score'],
-                        "content": doc.page_content,
-                        "path": self.find_document_path(doc.metadata['paper_id']),
-                    })
-
-            # Process images
-            images = []
-            for source in filter(lambda x: x['type'] == 'image', sources):
-                try:
-                    img = Image.open(source['path'])
-                    images.append({
-                        "paper_id": source['paper_id'],
-                        "path": source['path'],
-                        "image": img
-                    })
-                except Exception as e:
-                    logger.error(f"Error loading image {source['path']}: {e}")
-
-            # Clean and post-process the answer
-            # answer = self.clean_answer(results['result'])
-            answer = results['result']
-
-            logger.info("Query processing completed")
-            return {
-                "answer" : answer,
-                "sources": sources,
-                "images" : images
-            }
-
+            return generated_response
         except Exception as e:
             logger.error(f"Error processing query: {e}")
-            return {
-                "answer" : f"An error occurred while processing your query: {str(e)}",
-                "sources": [],
-                "images" : []
-            }
-
+            logger.error(traceback.format_exc())
+            return None

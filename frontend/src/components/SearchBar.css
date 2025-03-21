@@ -44,6 +44,9 @@
     /* background-color: #1d1f2b6c; */
     color: white;
 }
+.search-input, #search {
+    padding-left: 40px;
+  }
 
 .search-input.with-media {
     border-bottom: 1px solid #3a3e52;

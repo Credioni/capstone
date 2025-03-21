@@ -28,7 +28,7 @@ root.render(
 // 404 Page Component
 function NotFound() {
     return (
-        <div className="main">
+        <div className="main justify-self-center">
             <h2>404 - Page Not Found</h2>
         </div>
     );

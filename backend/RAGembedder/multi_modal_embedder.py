@@ -37,6 +37,7 @@ class ImageMetadata:
     path: str
     caption: str = ""
     source: str = ""
+    score: float = 0.0
 
 
 @dataclass
@@ -126,86 +127,156 @@ class MultimodalEmbedder:
         self.setup_indices()
 
 
-    def search(self, query:Dict[str, Any], k:int = 5, modality:str = "all") -> Dict[str, List]:
+    def search(self, query: Dict[str, Any], k: int = 5) -> dict:
+        """Search indexed
+        content based on multiple query types (text, image, audio).
+        Each query type can search across all modalities where applicable.
+
+        Args:
+            query (Dict[str, Any]): Dictionary containing query information:
+                - text: Text query string (optional)
+                - image: Path to image file for image query (optional)
+                - image: Path to audio file for audio query (optional)
+            k: Number of results to return per modality. Defaults to 5.
+
+        Returns:
+            dict: Dict with results organized by modality (text, image, video, audio).
         """
-        Search indexed content based on a text query
-        modality: 'all', 'text', 'image', 'video', or 'audio'
-        """
+
         results = {}
+        text_embedding  = None
+        image_embedding = None
+        audio_embedding = None
 
-        if modality in ["all", "text"] and (query_text := query.get("text")) is not None:
+        ######## Process all provided query types to generate embeddings #########
+        # Process text query
+        if query_text := query.get("text"):
             text_embedding = self.get_text_embedding(query_text)
-        else:
-            text_embedding = None
 
-        if modality in ["all", "text"] and text_embedding is not None:
-            # Search text index
-            # query_embedding = self.get_text_embedding(query_text)
+        # Process image query
+        if image_path := query.get("image"):
+            try:
+                import cv2
+                image = cv2.imread(image_path)
+                if image is not None:
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    inputs = self.clip_processor(images=image, return_tensors="pt").to(self.device)
+                    with torch.no_grad():
+                        image_features = self.clip_model.get_image_features(**inputs)
+                        image_embedding = image_features.cpu().numpy()
+                        # Normalize for cosine similarity
+                        image_embedding = image_embedding / np.linalg.norm(image_embedding, axis=1, keepdims=True)
+            except Exception as e:
+                logger.error(f"Error processing image query: {e}")
 
-            scores, indices = self.text_index.search(text_embedding, k)
+        # Process audio query
+        if audio_path := query.get("audio"):
+            logger.info(f"{audio_path = }")
+            try:
+                # Transcribe audio and get text embedding from transcript
+                audio_array, sample_rate = librosa.load(audio_path, sr=16000)
+                inputs = self.whisper_processor(
+                    audio_array,
+                    sampling_rate=sample_rate,
+                    return_tensors="pt"
+                ).to(self.device)
+
+                with torch.no_grad():
+                    outputs = self.whisper_model.generate(**inputs, max_length=448)
+                    transcript = self.whisper_processor.batch_decode(
+                        outputs,
+                        skip_special_tokens=True
+                    )[0]
+
+                # Generate text embedding
+                audio_embedding = self.get_text_embedding(transcript)
+
+                # Store transcript in results for user context
+                results["audio_transcript"] = transcript
+            except Exception as e:
+                logger.error(f"Error processing audio query: {e}")
+
+
+
+        ###### Search all modalities using available embeddings #####
+
+        # Search text index
+        if text_embedding is not None or audio_embedding is not None:
+            # Embedding to use for text search (prioritize text over audio)
+            search_embedding = text_embedding if text_embedding is not None else audio_embedding
+            scores, indices = self.text_index.search(search_embedding, k)
+
             text_results = []
             for score, idx in zip(scores[0], indices[0]):
                 if idx >= 0 and idx < len(self.text_metadata):
-                    # Convert dataclass to dict and add score
                     result_dict = vars(self.text_metadata[idx])
                     result_dict["score"] = float(score)
                     text_results.append(result_dict)
+
             results["text"] = text_results
 
-        if modality in ["all", "image"]:
-            # Convert query to CLIP text embedding for image search
-            # image = cv2.imread(query_imagepath)
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-            with torch.no_grad():
+        # Search image index
+        if text_embedding is not None or image_embedding is not None:
+            # For text-to-image search, convert text embedding to image space
+            if text_embedding is not None and image_embedding is None:
+                # CLIP convert text to image embedding
                 inputs = self.clip_processor(text=query["text"], return_tensors="pt", padding=True).to(self.device)
-                #inputs = self.clip_processor(images=image, return_tensors="pt").to(self.device)
-                query_img_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
-                query_img_embedding = query_img_embedding / np.linalg.norm(query_img_embedding)
+                with torch.no_grad():
+                    search_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
+                    search_embedding = search_embedding / np.linalg.norm(search_embedding, axis=1, keepdims=True)
+            else:
+                search_embedding = image_embedding
 
-            scores, indices = self.image_index.search(query_img_embedding, k)
+            scores, indices = self.image_index.search(search_embedding, k)
+
             image_results = []
             for score, idx in zip(scores[0], indices[0]):
                 if idx >= 0 and idx < len(self.image_metadata):
-                    # Convert dataclass to dict and add score
                     result_dict = vars(self.image_metadata[idx])
                     result_dict["score"] = float(score)
                     image_results.append(result_dict)
+
             results["image"] = image_results
 
-
-        if modality in ["all", "video"]:
-            # Use same CLIP text embedding for video search
-            with torch.no_grad():
+        # Search video index
+        if text_embedding is not None or image_embedding is not None:
+            # Same embedding approach as with images
+            if text_embedding is not None and image_embedding is None:
                 inputs = self.clip_processor(
                     text=query["text"],
                     return_tensors="pt",
                     padding=True
                 ).to(self.device)
-                query_vid_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
-                query_vid_embedding = query_vid_embedding / np.linalg.norm(query_vid_embedding)
+                with torch.no_grad():
+                    search_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
+                    search_embedding = search_embedding / np.linalg.norm(search_embedding, axis=1, keepdims=True)
+            else:
+                search_embedding = image_embedding
 
-            scores, indices = self.video_index.search(query_vid_embedding, k)
+            scores, indices = self.video_index.search(search_embedding, k)
+
             video_results = []
             for score, idx in zip(scores[0], indices[0]):
                 if idx >= 0 and idx < len(self.video_metadata):
-                    # Convert dataclass to dict and add score
                     result_dict = vars(self.video_metadata[idx])
                     result_dict["score"] = float(score)
                     video_results.append(result_dict)
+
             results["video"] = video_results
 
+        # Search audio index
+        if text_embedding is not None or audio_embedding is not None:
+            # Choose the embedding to use for audio
+            search_embedding = text_embedding if text_embedding is not None else audio_embedding
+            scores, indices = self.audio_index.search(search_embedding, k)
 
-        if modality in ["all", "audio"] and text_embedding is not None:
-            # Search audio index using the same text embeddings
-            scores, indices = self.audio_index.search(text_embedding, k)
             audio_results = []
             for score, idx in zip(scores[0], indices[0]):
                 if idx >= 0 and idx < len(self.audio_metadata):
-                    # Convert dataclass to dict and add score
                     result_dict = vars(self.audio_metadata[idx])
                     result_dict["score"] = float(score)
                     audio_results.append(result_dict)
+
             results["audio"] = audio_results
 
         return results

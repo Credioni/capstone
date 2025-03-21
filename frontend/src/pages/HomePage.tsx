@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import "./HomePage.css"
 import SearchBar from '../components/SearchBar';
 import QuicLinks from '../components/QuickLinks';
-//import SearchIcon from "./imgs/search_icon.svg?react'";
 
 
 function HomePage() {

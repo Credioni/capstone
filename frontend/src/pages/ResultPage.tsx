@@ -16,10 +16,12 @@ import {
     List,
     ListItem,
     Button,
-    Card
+    Card,
+    CircularProgress
   } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import SearchIcon from '@mui/icons-material/Search';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
+import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import { SampleResults } from '../assets/SampleResults';
 import ResultArxivItem from './resultpage/ResultArxivItem';
 import TypeWriter from './resultpage/ResultArxivItem';
@@ -27,6 +29,9 @@ import {SearchBar} from "./resultpage/SearchBar"
 import { FetchData } from '../services/RagApi';
 import TypewriterText from './resultpage/TypeWriter';
 import ResultItemVideo from './resultpage/ResultItemVideo';
+import ImageDisplay from './resultpage/ImageDisplay';
+import AudioDisplay from './resultpage/AudioDisplay';
+import LoadingText from './resultpage/LoadingText';
 
 interface PaperMetadata {
     title: string;
@@ -65,6 +70,17 @@ interface ResultYoutube {
     title: string;
     // etc
 }
+const LOADING_MSG = [
+    "Searching response over 2.5 million reasearch papers...",
+    "Searching throught various multimedia sources...",
+]
+
+const RAG_LOADING_MSG = [
+    "Quering over 2.5 million research articles...",
+    "Deepseek R1 thinking about your query...",
+    "Generating reponses based on content below...",
+    "Generating answer based on reasearch articles...",
+]
 
 
 function ResultPage() {
@@ -75,7 +91,7 @@ function ResultPage() {
 
     const [category, setCategory] = useState('all');
     const [searchQuery, setSearchQuery] = useState(id);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     // RESPONSES
     // raw
@@ -86,52 +102,31 @@ function ResultPage() {
     const [results, setResults] = useState([]);
 
 
+    useEffect(() => {
+        if (rawresponse?.answer != null) {
+            setAnswer(rawresponse.answer)
+        }
+    }, [rawresponse]);
 
     useEffect(() => {
         setSearchQuery(id);
         fetchResults(searchQuery);
     }, [id]);
 
-    function GenerateResultsAndAnswer(raw_response) {
-        // const sources: [] = raw_response.sources;
-
-        // let parsed_sources: any[] = [];
-        // for (let i = 0; i < sources.length; i++) {
-        //     const source: any = sources[i];
-        //     const metadata: any = source.metadata;
-
-        //     const asd: any = {
-        //         score: source.score,
-        //         id: source.paper_id,
-        //         title: metadata.title,
-        //         authors: metadata.authors,
-        //         abstract: metadata.abstract,
-        //         url: metadata.url,
-        //         // categories: metadata,
-        //         // contentTypes: ["pdf", "images", "equations"],
-        //         // submissionDate: "13 March, 2025",
-        //         figures: 5,
-        //         pages: 5
-        //     };
-        //     parsed_sources.push(asd);
-        // }
-        // setAnswer(raw_response.answer);
-        // setResults(parsed_sources)
-    }
-
     // Function to fetch results based on query
     async function fetchResults(searchTerm) {
         console.log("id", id);
+
         setLoading(true);
         try {
             if (searchTerm) {
                 let path = `http://localhost:8080/result?q=${encodeURIComponent(id || "")}`;
                 const response = await FetchData(path);
                 console.log("response", response)
+
+                // Set response content
                 setRawResponse(response);
                 setResults(response.results)
-
-                GenerateResultsAndAnswer(response);
 
                 // Simulating API call with timeout
                 setTimeout(() => {
@@ -173,7 +168,8 @@ function ResultPage() {
         <div className='w-dvh min-h-dvh justify-items-center'>
             <header className='w-full h-20'>
                 {/* Header control row */}
-                <div className='h-full grid grid-cols-2 place-items-center  bg-[#2c243c]'>
+                <div className='h-full grid grid-cols-3 place-items-center  bg-[#2c243c]'>
+                    <div/>
                     <Typography
                         component="button"
                         sx={{color: "white"}}
@@ -185,58 +181,37 @@ function ResultPage() {
                         ArXiv RAG Search
                     </Typography>
 
-                    {/* <SearchBar
-                        className="w-full"
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        handleSearch={handleSearch}
-                    /> */}
                     {/* Right header - Info*/}
                     <div className='flex justify-self-start m-5'>
-                        <Divider className='bg-gray-900' orientation='vertical'/>
-                        <HelpOutlineIcon/>
-                        <Typography> Syntax </Typography>
+                        <FormatAlignJustifyIcon sx={{color: "white"}} />
+                        <Typography sx={{color: "white"}}> Advanced </Typography>
 
-                        <Button onClick={() => GenerateResultsAndAnswer(rawresponse)}>
-                            Query
-                        </Button>
+                        <ShuffleIcon className="ml-5" sx={{color: "white"}} />
+                        <Typography sx={{color: "white"}}> Random </Typography>
+
+                        <HelpOutlineIcon className="ml-5" sx={{color: "white"}} />
+                        <Typography sx={{color: "white"}}> Syntax </Typography>
                     </div>
                 </div>
             </header>
 
             {/* Page Content */}
-            <Box>
-                {/* Result Bar Info */}
-                <div className='h-10 w-full grid grid-cols-3 place-items-cente'>
-                    <div/>
-                    {/* <FormControl sx={{ minWidth: 150 }} size="small">
-                        <InputLabel id="category-select-label">Category</InputLabel>
-                        <Select
-                            labelId="category-select-label"
-                            value={category}
-                            label="Category"
-                            onChange={(e) => setCategory(e.target.value)}
-                        >
-                            <MenuItem value="all">All categories</MenuItem>
-                            <MenuItem value="quant-ph">Quantum Physics</MenuItem>
-                            <MenuItem value="physics.app-ph">Applied Physics</MenuItem>
-                            <MenuItem value="cs.LG">Machine Learning</MenuItem>
-                            <MenuItem value="physics.optics">Optics</MenuItem>
-                        </Select>
-                    </FormControl> */}
-                    {/* Results count */}
-                    {/* <Box className="justify-self-left ml-(50%)" sx={{ mb: 2 }}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Found {results?.length | 0 } results
-                        </Typography>
-                    </Box> */}
-                </div>
 
+            {/* Generated RAG LLM answer */}
+            <Box className="pt-5 justify-items-center max-w-5xl">
+                { answer !== null ?
+                    <TypewriterText text={answer} typingSpeed={5} className="min-w-fit"/>
+                :
+                    <Box className='pt-5 pb-5 w-full h-25 justify-items-center'>
+                        <CircularProgress color="success" />
+                        <LoadingText list={loading ? LOADING_MSG : RAG_LOADING_MSG } />
+                    </Box>
+                }
+            </Box>
+
+            <Box sx={{ display: loading ? "none": "block" }} >
                 {/* ArXiv Results */}
                 <Box className="grid-flow-col grid-cols-${results.length} justify-items-center pt-5 max-w-5xl">
-                    {/* Generated RAG LLM answer */}
-                    <TypewriterText text={answer} typingSpeed={5} className="min-w-fit"/>
-
                     <List sx={{ listStyle: "decimal", pl: 4 }}>
                         { results?.text?.length > 0 ? (
                             results.text.map((paper, index) => (
@@ -256,26 +231,34 @@ function ResultPage() {
                 </Box>
 
                 {/* Images and Audio */}
-                <Box className="max-w-5xl w-full min-w-full justify-items-center">
-                    <Card className="w-full">
-                        <Typography>
-                            { "Images and audio content" }
-                        </Typography>
-                    </Card>
-                </Box>
-
-                {/* Youtube Videos */}
-                <Box className="grid-flow-col max-w-5xl w-full min-w-full justify-items-center pt-5">
-
-                    <Typography className='w-fit justify-self-start' variant="h6">
-                        {"You may find intrest in these Scientific Content Creators..."}
+                <Card className="max-w-5xl w-full min-w-full justify-items-center pt-5">
+                    <Typography variant='h3' className='pt-2'>
+                        { "Images and audio content" }
                     </Typography>
 
+                    <Divider className="pt-2" sx={{width: "95%", height:"2px", color: "#2c243c"}}/>
 
-                    <List sx={{ listStyle: "decimal", pl: 4 }}>
+                    <Card className="w-full pb-5 pl-1 justify-items-center">
+                        <ImageDisplay images={results?.image} className="pb-5"/>
+                        <Divider className="pt-2" sx={{width: "95%", height:"2px", color: "#2c243c"}}/>
+                        <AudioDisplay audioFiles={results?.audio}/>
+                    </Card>
+                </Card>
+
+                {/* Youtube Videos */}
+                <Box className="grid-flow-col max-w-5xl w-full min-w-full justify-items-center pt-5 mt-7">
+                    <Typography className='w-fit justify-self-start' variant="h4">
+                        {"You may find intrest in"}
+                        <br/>
+                        <i className="pl-7">{"Popular Scientific Content Creators"} </i>
+                    </Typography>
+
+                    <Divider className="pt-2" sx={{width: "95%", height:"2px", color: "#2c243c"}}/>
+
+                    <List className="flex" sx={{ listStyle: "decimal", pl: 4 }}>
                         { results?.video?.length > 0 ? (
-                            results.video.map((video, index) => (
-                                <ResultItemVideo video={video} className="min-w-fit"/>
+                            results.video.slice(0,3 ).map((video, index) => (
+                                <ResultItemVideo key={index} video={video}/>
                             ))
                         ): ""}
                     </List>

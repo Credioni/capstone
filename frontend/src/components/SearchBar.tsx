@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import "./SearchBar.css";
 
 type MediaFile = {
-  file: File;
-  preview: string;
-  type: string;
+    file: File;
+    preview: string;
+    type: string;
 };
 
 export default function SearchBar() {

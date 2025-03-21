@@ -14,4 +14,4 @@ def zero_shot(query, **kwargs):
 
 
 if __name__=="__main__":
-    zero_shot(query="Quantum Mechanics")
+    zero_shot(query={"text": "Quantum Mechanics"})

@@ -67,19 +67,19 @@ function formDOI(num) {
  * InfoSection component displays a section with media items
  */
 const InfoSection = ({ title, items, onItemHover, onItemClick }) => {
-  // Get the appropriate icon based on media type
-  const getItemIcon = (type) => {
-    switch (type) {
-      case 'image':
-        return <ImageIcon fontSize="small" sx={{ color: '#343243' }} />;
-      case 'audio':
-        return <AudioFileIcon fontSize="small" sx={{ color: '#343243' }} />;
-      case 'pdf':
-        return <PictureAsPdfIcon fontSize="small" sx={{ color: '#343243' }} />;
-      default:
-        return <ArticleIcon fontSize="small" sx={{ color: '#343243' }} />;
-    }
-  };
+    // Get the appropriate icon based on media type
+    const getItemIcon = (type) => {
+        switch (type) {
+            case 'image':
+                return <ImageIcon fontSize="small" sx={{ color: '#343243' }} />;
+            case 'audio':
+                return <AudioFileIcon fontSize="small" sx={{ color: '#343243' }} />;
+            case 'pdf':
+                return <PictureAsPdfIcon fontSize="small" sx={{ color: '#343243' }} />;
+            default:
+                return <ArticleIcon fontSize="small" sx={{ color: '#343243' }} />;
+        }
+    };
 
     return (
         <div className='border-l-2 border-[#34324335]'>
@@ -159,10 +159,10 @@ function ResultItemInfo({ info, ...args }) {
                     <AutoAwesomeMotionIcon sx={{ color: 'white' }}/>
 
                     <div className="ml-2 text-white text-md">
-                        Article Content Embedded
+                        Article Content
                     </div>
                 </div>
-                <hr className="border-l-2 border-solid border-gray-600 w-[85%] ml-[14%]"/>
+                <hr className="border-l-2 border-solid border-gray-600 w-[85%] ml-[10%]"/>
             </div>
 
             <List dense onMouseLeave={handleMouseLeave}>
@@ -195,13 +195,11 @@ function ResultCardTitle({doi, score, pdf_link=null, ...args}) {
 
     return (
     <Typography {...args} sx={{ display: 'flex', flexDirection: 'row' }}>
-        <Link href={"https://arxiv.org/abs/" + doifixed} className='pr-4'> {doi}</Link>
+        <Link href={"https://arxiv.org/abs/" + doifixed} className='pr-4'> {formDOI(doi)}</Link>
         [
             <Link href={"https://arxiv.org/pdf/" + doifixed}>pdf</Link>,
             <Link href={"https://arxiv.org/format/" + doifixed}>other</Link>
         ]
-
-        { score.toFixed(3) }
     </Typography>
     );
 }
@@ -220,33 +218,39 @@ function ResultCard({index, result, ...args }) {
 
     return (
         /* Result Card */
-        <Card className='flex border-black border-5' {...args} >
-            {/* Left Side */}
-            <div className="flex-1 flex flex-col">
-                {/* Top title */}
-                <ResultCardTitle className="pl-4" index={index} doi={result.id} score={result.score} />
+        <Card className='border-black border-5' {...args} >
+            <Box className="flex">
+                {/* Left Side */}
+                <div className="flex-1 flex flex-col">
+                    {/* Top title */}
+                    <ResultCardTitle className="pl-4" index={index} doi={result.id} score={result.score} />
 
-                {/* Main Content */}
-                <div className="flex pl-4 pb-4">
-                    {/* Article Information */}
-                    <div className="flex-1 pr-4">
-                        <Typography gutterBottom variant="h6" component="div">
-                            { result.title }
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            { result.text }
-                        </Typography>
+                    {/* Main Content */}
+                    <div className="flex pl-4 pb-4">
+                        {/* Article Information */}
+                        <div className="flex-1 pr-4">
+                            <Typography gutterBottom variant="h6" component="div">
+                                { result.title }
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                { result.text }
+                            </Typography>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Right Side - Info */}
-            {/* <ResultItemInfo
-                className='flex-2 ml-5 mr-2 max-w-70'
-                info={DUMMYrightPanelData}
-                // onPreviewChange={setHoveredItem}
-            /> */}
+                {/* Right Side - Info */}
+                <ResultItemInfo
+                    className='flex-2 ml-5 mr-2 max-w-70'
+                    info={DUMMYrightPanelData}
+                    // onPreviewChange={setHoveredItem}
+                />
+            </Box>
+            <Typography className="justify-self-center pb-1" variant="body2" sx={{ color: 'text.secondary' }}>
+                { "Faiss score: " + result.score.toFixed(3) }
+            </Typography>
         </Card>
+
     );
 }
 

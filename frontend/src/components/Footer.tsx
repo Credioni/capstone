@@ -1,22 +1,20 @@
-
-// File: src/components/Footer.jsx
 import React from 'react';
 import './Footer.css';
 
 function Footer() {
   return (
-    <footer className="footer">
+    <footer className="footer pt-2">
         <div className="footer-content">
             <div className="footer-section">
                 <h3 className="footer-heading">About</h3>
                 <a href="#" className="footer-link">Our Story</a>
                 <a href="#" className="footer-link">Team</a>
-                <a href="#" className="footer-link">Careers</a>
+                <a href="#" className="footer-link">Project</a>
             </div>
 
             <div className="footer-section">
                 <h3 className="footer-heading">Support</h3>
-                <a href="#" className="footer-link">Help Center</a>
+                <a href="#" className="footer-link">Common QA</a>
                 <a href="#" className="footer-link">Contact Us</a>
                 <a href="#" className="footer-link">FAQ</a>
             </div>

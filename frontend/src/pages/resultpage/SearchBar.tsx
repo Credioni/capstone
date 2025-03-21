@@ -10,8 +10,6 @@ import {
     Divider,
     Paper,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-
 
 export function SearchBar({searchQuery, setSearchQuery, handleSearch, ...props}: any){
     return (
@@ -35,15 +33,7 @@ export function SearchBar({searchQuery, setSearchQuery, handleSearch, ...props}:
                         handleSearch(e);
                     }
                 }}
-                // InputProps={{
-                //     endAdornment: (
-                //     <InputAdornment position="end">
-                //         <IconButton type="submit" edge="end">
-                //         <SearchIcon />
-                //         </IconButton>
-                //     </InputAdornment>
-                //     ),
-                // }}
+
             />
         </Paper>
     );

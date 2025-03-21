@@ -14,9 +14,11 @@ For script content see `justfile`-file.
 just build-faiss
 ```
 
-**Start Frontend & Backend** in different terminals.
+**Start Frontend & Backend**.
 ```bash
 just run-front
+```
+```bash
 just run-back
 ```
 
@@ -40,8 +42,18 @@ pip install faiss-cpu torch transformers sentence-transformers langchain langcha
 Create a scientific research assistant that retrieves related text, images, and videos from academic
 papers.
 
-# Technologies Used
+# Technologies and Tecniques used
 ## Frontend
- - Main framework `React` and `Rsbuild`
- - Also includes `MaterialUI` `Tailwindcss`.
+ - Main framework `React`, `Rsbuild` with `Tailwindcss`.
+
+Tecniques used
+1. [SVG -noise](https://css-tricks.com/grainy-gradients/) for more natural looking UI.
+2. [Material UI]().
+3. [Tailwindcss]().
+
+
 ## Backend
+Tecniques and Matrial arts used
+1. [HTTP caching]() -for fast request retrival.
+2. [RAG-retrival]() caching.
+3. [Multithreading]() & [Hash-Cache]() for even faster faiss-retrival.

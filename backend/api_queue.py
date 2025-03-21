@@ -12,11 +12,13 @@ from robyn import Request
 import logging
 import traceback
 
-logger = logging.getLogger(__name__)
-
 from api_query_handler import handle_formdata_save
+from RAGembedder.arxiv_rag_system import ArXivRAGSystem
 from RAGembedder.multi_modal_embedder import MultimodalEmbedder
-from api_dirty import EnumEncoder
+
+from api_dirty import EnumEncoder, init_logger
+logger = logging.getLogger(__name__)
+init_logger(logger)
 
 
 type Hash = str;
@@ -30,19 +32,8 @@ class QueueStatus(Enum):
 
 @dataclass
 class QueryHandler:
-    """Handles Queries made to backend.
+    """ Handles Queries made to backend """
 
-    -> Register query
-    -->
-
-    Create hash of specific query and saves query content to
-        `./query` folder as an default.
-
-    Spawns a thread to "job queue"
-
-    Returns:
-        _type_: _description_
-    """
     # Queue -list that rag_thread handles
     faiss_queue: set[int] = field(default_factory=set)
     rag_queue: set[int] = field(default_factory=set)
@@ -50,8 +41,13 @@ class QueryHandler:
     query_path:  os.PathLike = field(default="query")
     upload_path: os.PathLike = field(default="uploads")
     result_path: os.PathLike = field(default="faiss_results")
+
     embedder:MultimodalEmbedder = field(default=None)
     embedder_thread:threading.Thread = field(default=None)
+
+    rag:ArXivRAGSystem = field(default=None)
+    rag_thread:threading.Thread = field(default=None)
+
 
     def __post_init__(self):
         os.makedirs(self.query_path, exist_ok=True)
@@ -60,28 +56,55 @@ class QueryHandler:
 
         self.faiss_queue = set([])
         self.rag_queue = set([])
+
         self.embedder = MultimodalEmbedder()
         self.embedder.load_indices()
 
-        def operator(embedder: MultimodalEmbedder):
+        self.rag = ArXivRAGSystem()
+
+        def embedder_operator(embedder: MultimodalEmbedder):
             """FAISS thread-operator"""
             while True:
                 try:
                     # Checking if not empty and ...
                     if self.faiss_queue and (hash := self.faiss_queue.pop()):
                         query = self.get_query_json(hash)
-                        result = embedder.search({"text": query["text"]})
+                        result = embedder.search(query)
                         self.register_faiss_result(hash, result)
                         self.rag_queue.add(hash)
                     else:
-                        time.sleep(5)
+                        time.sleep(1)
                 except Exception as e:
                     logger.error(f"FAISS THREAD ERROR: {e}")
                     logger.error(traceback.format_exc())
 
-        self.embedder_thread = threading.Thread(target=operator, args=[self.embedder])
+        self.embedder_thread = threading.Thread(target=embedder_operator, args=[self.embedder])
         self.embedder_thread.start()
 
+        def rag_operator(rag: ArXivRAGSystem):
+            """RAG thread-operator"""
+            while True:
+                try:
+                    if self.rag_queue and (hash := self.rag_queue.pop()):
+                        result = self.get_result_json(hash)
+                        texts = result["results"].get("text", None)
+                        context = [(
+                                    f"Article {i}:"
+                                    + x.get("title")
+                                    + "\n"
+                                    + x.get("text", "")
+                                ) for i, x in enumerate(texts[:3])]
+
+                        answer = rag.query(result.get("query_text"), context=context)
+                        self.register_rag_answer(hash, answer)
+                    else:
+                        time.sleep(1)
+                except Exception as e:
+                    logger.error(f"FAISS THREAD ERROR: {e}")
+                    logger.error(traceback.format_exc())
+
+        self.rag_thread = threading.Thread(target=rag_operator, args=[self.rag])
+        self.rag_thread.start()
 
     def register_query(self, request: Request) -> Optional[Hash]:
         hashable_body = pickle.dumps(request.body)
@@ -95,12 +118,18 @@ class QueryHandler:
         try:
             os.makedirs(self.query_path, exist_ok=True)
 
-            query_information = {
-                "id": hash,
-                "text": request.form_data["query"],
-                "uploads": list(request.files.keys()),
-                "status" : QueueStatus.REGISTERED
-            }
+            # Get query information
+            filenames  = [os.path.abspath(os.path.join("uploads", x)) for x in request.files.keys()]
+            image_path = next(filter(lambda file: file.endswith(".png"), filenames), None)
+            audio_path = next(filter(lambda file: file.endswith(".wav"), filenames), None)
+
+            query_information = self._generate_query_json(
+                hash=hash,
+                status=QueueStatus.REGISTERED,
+                text=request.form_data["query"],
+                image=image_path,
+                audio=audio_path,
+            )
 
             filepath = os.path.join(self.query_path, hash + ".json")
             with open(filepath, "w", encoding="utf-8") as file:
@@ -125,16 +154,17 @@ class QueryHandler:
     #     query_json = self.get_query_json(hash)
     #     self.embedder.search(query="text")
 
-    def register_faiss_result(self, hash: Hash, result):
+    def register_faiss_result(self, hash: Hash, result, answer=None):
         self._change_status(hash, QueueStatus.FAISS)
-        self.save_result_json(hash, result)
+        self.save_result_json(hash, result, answer)
         # self.faiss_queue.remove(hash)
+
+    def register_rag_answer(self, hash, answer):
+        self._change_status(hash, QueueStatus.FINISHED)
+        self.save_rag_answer(hash, answer)
 
     def get_faiss_results(self, hash: Hash) -> dict:
         return self.get_result_json(hash) or {"hash": hash, "result": []}
-
-    def query_content(self, hash: Hash):
-        pass
 
     def is_registered(self, hash: Hash) -> bool:
         return self.get_status(hash) != QueueStatus.NOT_REGISTERED
@@ -147,10 +177,19 @@ class QueryHandler:
         else:
             return QueueStatus.NOT_REGISTERED
 
-    def save_result_json(self, hash, results):
-        results_json = {"hash": str(hash), "results": results}
+    def save_result_json(self, hash, results, answer=None):
+        results_json = {
+            "hash": str(hash),
+            "answer": answer,
+            "query_text": self.get_query_json(hash).get("text", None),
+            "results": results,
+        }
         self._json_dump(self.path_to_results_json(hash), results_json)
 
+    def save_rag_answer(self, hash, answer):
+        result = self.get_result_json(hash)
+        result["answer"] = answer
+        self._json_dump(self.path_to_results_json(hash), result)
 
     def get_query_json(self, hash) -> Optional[dict]:
         """Get sended query json"""
@@ -174,10 +213,15 @@ class QueryHandler:
         query["status"] = status
         self._json_dump(self.path_to_query_json(hash), query)
 
-    def __spawn_rag_thread(self):
-        logger.info("RAG Thread created.")
-        pass
 
+    def _generate_query_json(self, hash, status, **kwargs):
+        return {
+            "id"  : hash,
+            "text": kwargs.get("text", None),
+            "image": kwargs.get("image", None),
+            "audio": kwargs.get("audio", None),
+            "status" : QueueStatus.REGISTERED,
+        }
 
     def _json_dump(self, filepath, content):
         try:
