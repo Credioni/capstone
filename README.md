@@ -5,10 +5,18 @@
 | ------------- | ------------- |------------- |-------------|
 | ✅Planning    | ✅Model + UI Skeletons | ✅Integration |  🚧Polishing   |
 
+# Usefull commands using `Justfile`
 
+## Build faiss embeddings
 ```bash
-# Start frontend
-just dev
+just build-faiss
+```
+
+
+# Start frontend & backend
+```bash
+just run-front
+just run-back
 ```
 
 # Project 17: Multimedia Large Language Model Applications with Multimedia Embedding RAG

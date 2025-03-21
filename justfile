@@ -2,12 +2,21 @@
 set shell := ["powershell.exe", "-c"]
 
 
+# Resets and builds the embeddings except arxiv paper
+build-faiss:
+    cd backend/RAGembedder | py -3.12 .\build.py
+
 # Run backend with dev mode
 run-back:
     cd backend | py -3.12 .\api.py
 
 dev-back:
     cd backend | py -3.12 -m robyn .\api.py --dev
+
+
+
+run-front:
+    cd frontend | pnpm run
 
 # Run frontend with dev mode
 dev-front:
