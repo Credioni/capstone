@@ -1,21 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    Container,
     Typography,
     Box,
-    TextField,
-    InputAdornment,
-    IconButton,
     Divider,
-    CardContent,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     List,
-    ListItem,
-    Button,
     Card,
     CircularProgress
   } from '@mui/material';
@@ -24,8 +13,6 @@ import ShuffleIcon from '@mui/icons-material/Shuffle';
 import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import { SampleResults } from '../assets/SampleResults';
 import ResultArxivItem from './resultpage/ResultArxivItem';
-import TypeWriter from './resultpage/ResultArxivItem';
-import {SearchBar} from "./resultpage/SearchBar"
 import { FetchData } from '../services/RagApi';
 import TypewriterText from './resultpage/TypeWriter';
 import ResultItemVideo from './resultpage/ResultItemVideo';
@@ -108,6 +95,7 @@ function ResultPage() {
         }
     }, [rawresponse]);
 
+
     useEffect(() => {
         setSearchQuery(id);
         fetchResults(searchQuery);
@@ -128,11 +116,6 @@ function ResultPage() {
                 setRawResponse(response);
                 setResults(response.results)
 
-                // Simulating API call with timeout
-                setTimeout(() => {
-                    setRawResponse(null);
-                    setLoading(false);
-                }, 500);
             } else {
                 setRawResponse(null);
             }
@@ -202,16 +185,19 @@ function ResultPage() {
                 { answer !== null ?
                     <TypewriterText text={answer} typingSpeed={5} className="min-w-fit"/>
                 :
-                    <Box className='pt-5 pb-5 w-full h-25 justify-items-center'>
+                    <Box className="flex flex-col items-center justify-center w-full">
                         <CircularProgress color="success" />
-                        <LoadingText list={loading ? LOADING_MSG : RAG_LOADING_MSG } />
+                        <LoadingText list={answer === null ? LOADING_MSG : RAG_LOADING_MSG} />
                     </Box>
                 }
             </Box>
 
             <Box sx={{ display: loading ? "none": "block" }} >
                 {/* ArXiv Results */}
-                <Box className="grid-flow-col grid-cols-${results.length} justify-items-center pt-5 max-w-5xl">
+                <Box
+                    className="grid-flow-col grid-cols-${results.length} justify-items-center pt-5 max-w-5xl"
+                    sx={{ display: results?.text == null ? "none": "block" }}
+                >
                     <List sx={{ listStyle: "decimal", pl: 4 }}>
                         { results?.text?.length > 0 ? (
                             results.text.map((paper, index) => (
@@ -231,7 +217,10 @@ function ResultPage() {
                 </Box>
 
                 {/* Images and Audio */}
-                <Card className="max-w-5xl w-full min-w-full justify-items-center pt-5">
+                <Card
+                    sx={{display: results?.audio == null ? "none": "block"}}
+                    className="max-w-5xl w-full min-w-full justify-items-center pt-5"
+                >
                     <Typography variant='h3' className='pt-2'>
                         { "Images and audio content" }
                     </Typography>
@@ -246,7 +235,10 @@ function ResultPage() {
                 </Card>
 
                 {/* Youtube Videos */}
-                <Box className="grid-flow-col max-w-5xl w-full min-w-full justify-items-center pt-5 mt-7">
+                <Box
+                    sx={{display: results?.audio == null ? "none": "block"}}
+                    className="grid-flow-col max-w-5xl w-full min-w-full justify-items-center pt-5 mt-7"
+                >
                     <Typography className='w-fit justify-self-start' variant="h4">
                         {"You may find intrest in"}
                         <br/>

@@ -58,7 +58,7 @@ async def result_status(_request: Request, query_params: QueryParams):
                 result['results']['image'] = process_images(image_data, logger)
 
                 nimages = len(result['results']['image'])
-                logger.info(f"Processed {nimages} images for response")
+                # logger.info(f"Processed {nimages} images for response")
 
         # Process audio
         if 'results' in result and 'audio' in result['results']:
@@ -67,7 +67,7 @@ async def result_status(_request: Request, query_params: QueryParams):
                 result['results']['audio'] = process_audio(audio_data, logger)
 
                 naudio = len(result['results']['audio'])
-                logger.info(f"Processed {naudio} audio files for response")
+                # logger.info(f"Processed {naudio} audio files for response")
 
         return result
     else:
