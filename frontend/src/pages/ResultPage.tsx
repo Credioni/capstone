@@ -181,11 +181,11 @@ function ResultPage() {
             {/* Page Content */}
 
             {/* Generated RAG LLM answer */}
-            <Box className="pt-5 justify-items-center max-w-5xl">
+            <Box className="pt-5 w-full h-full justify-items-center ">
                 { answer !== null ?
                     <TypewriterText text={answer} typingSpeed={5} className="min-w-fit"/>
                 :
-                    <Box className="flex flex-col items-center justify-center w-full">
+                    <Box className="flex flex-col items-center justify-center w-full h-screen pb-56">
                         <CircularProgress color="success" />
                         <LoadingText list={answer === null ? LOADING_MSG : RAG_LOADING_MSG} />
                     </Box>
