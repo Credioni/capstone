@@ -6,6 +6,10 @@ set shell := ["powershell.exe", "-c"]
 build-faiss:
     cd backend/RAGembedder | py -3.12 .\build.py
 
+# Zero-shot to test that embeddings work
+zero-shot-faiss:
+    cd backend/RAGembedder | py -3.12 .\zero-shot.py
+
 # Run backend with dev mode
 run-back:
     cd backend | py -3.12 .\api.py
