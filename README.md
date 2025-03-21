@@ -42,5 +42,6 @@ papers.
 
 # Technologies Used
 ## Frontend
-
+ - Main framework `React` and `Rsbuild`
+ - Also includes `MaterialUI` `Tailwindcss`.
 ## Backend
