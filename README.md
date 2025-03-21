@@ -5,14 +5,16 @@
 | ------------- | ------------- |------------- |-------------|
 | ✅Planning    | ✅Model + UI Skeletons | ✅Integration |  🚧Polishing   |
 
-# Usefull commands using `Justfile`
+# Usefull commands using [Justfile](https://github.com/casey/just)
+Scripts work in Windows enviroment and may work also in other platforms.
+For script content see `justfile`-file.
 
 **Build Faiss-embeddings** -with empty text/arXiv-embeddings
 ```bash
 just build-faiss
 ```
 
-**Start Frontend & Backend**
+**Start Frontend & Backend** in different terminals.
 ```bash
 just run-front
 just run-back
