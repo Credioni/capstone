@@ -10,15 +10,15 @@ from PIL import Image
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from .arxiv_retriever import ArXivRetriever
 
+
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
 class ArXivRAGSystem:
     """
-    A RAG (Retrieval-Augmented Generation) system for arXiv papers.
-
-    This system combines a retriever for fetching relevant documents and a
-    language model for generating answers based on those documents.
+    A RAG (Retrieval-Augmented Generation) system for arXiv papers
+    and multi-media scientific content.
     """
 
     def __init__(self, config):

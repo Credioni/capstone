@@ -15,3 +15,10 @@ lynx-devtool
 data
 log
 tmp
+# Embedding data
+*.mp4
+*.json
+*.faiss
+*.wav
+*.jpg
+*.png

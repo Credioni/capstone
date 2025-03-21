@@ -2,100 +2,100 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, Typography, Button, Box } from '@mui/material';
 
 const TypewriterText = ({ text, typingSpeed = 30, ...args }) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
-  const [showRawText, setShowRawText] = useState(false);
+    const [displayedText, setDisplayedText] = useState('');
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isComplete, setIsComplete] = useState(false);
+    const [showRawText, setShowRawText] = useState(false);
 
-  useEffect(() => {
-    // Reset state when text changes
-    setDisplayedText('');
-    setCurrentIndex(0);
-    setIsComplete(false);
-    setShowRawText(false);
-  }, [text]);
+    useEffect(() => {
+        // Reset state when text changes
+        setDisplayedText('');
+        setCurrentIndex(0);
+        setIsComplete(false);
+        setShowRawText(false);
+    }, [text]);
 
-  useEffect(() => {
-    if (!text) return;
+    useEffect(() => {
+        if (!text) return;
 
-    const contentToType = text.split("</think>")[1] || text;
+        const contentToType = text.split("</think>")[1] || text;
 
-    if (currentIndex < contentToType.length) {
-      const timer = setTimeout(() => {
-        setDisplayedText(prev => prev + contentToType[currentIndex]);
-        setCurrentIndex(prevIndex => prevIndex + 1);
-      }, typingSpeed);
+        if (currentIndex < contentToType.length) {
+        const timer = setTimeout(() => {
+            setDisplayedText(prev => prev + contentToType[currentIndex]);
+            setCurrentIndex(prevIndex => prevIndex + 1);
+        }, typingSpeed);
 
-      return () => clearTimeout(timer);
-    } else {
-      setIsComplete(true);
-    }
-  }, [text, currentIndex, typingSpeed]);
+        return () => clearTimeout(timer);
+        } else {
+        setIsComplete(true);
+        }
+    }, [text, currentIndex, typingSpeed]);
 
-  // Determine if text contains a </think> tag
-  const hasThinkTag = text && text.includes("</think>");
+    // Determine if text contains a </think> tag
+    const hasThinkTag = text && text.includes("</think>");
 
-  // What to display based on animation state and showRawText toggle
-  const textToDisplay = () => {
-    if (!isComplete) {
-      return displayedText;
-    }
+    // What to display based on animation state and showRawText toggle
+    const textToDisplay = () => {
+        if (!isComplete) {
+        return displayedText;
+        }
 
-    if (showRawText) {
-      // Make sure we get the entire raw text with consistent formatting
-      return text || '';
-    }
+        if (showRawText) {
+        // Make sure we get the entire raw text with consistent formatting
+        return text || '';
+        }
 
-    // Show just the processed part with consistent formatting
-    return text?.split("</think>")[1] || text || '';
-  };
+        // Show just the processed part with consistent formatting
+        return text?.split("</think>")[1] || text || '';
+    };
 
-  return (
-    <Card {...args} sx={{ width: '100%', minWidth: 'fit-content' }}>
-      <CardContent sx={{ width: '100%' }}>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            width: '100%',
-            wordBreak: 'break-word',
-            whiteSpace: 'pre-wrap'
-          }}
-        >
-          {textToDisplay().split('\n').map((line, index, array) => (
-            <React.Fragment key={index}>
-              {line}
-              {index < array.length - 1 && <br />}
-            </React.Fragment>
-          ))}
-        </Typography>
+    return (
+        <Card {...args} sx={{ width: '100%', minWidth: 'fit-content' }}>
+            <CardContent sx={{ width: '100%' }}>
+                <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{
+                        width: '100%',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                    }}
+                >
+                {textToDisplay().split('\n').map((line, index, array) => (
+                    <React.Fragment key={index}>
+                    {line}
+                    {index < array.length - 1 && <br />}
+                    </React.Fragment>
+                ))}
+                </Typography>
 
-        {isComplete && hasThinkTag && (
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setShowRawText(!showRawText)}
-            >
-              {showRawText ? "Show less" : "Show all"}
-            </Button>
-          </Box>
-        )}
+                {isComplete && hasThinkTag && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setShowRawText(!showRawText)}
+                    >
+                    {showRawText ? "Show less" : "Show all"}
+                    </Button>
+                </Box>
+                )}
 
-        <Typography
-          variant="body1"
-          sx={{
-            color: 'text.secondary',
-            mt: 1.5,
-            opacity: isComplete ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out'
-          }}
-        >
-          {text ? "Generated by deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" : ""}
-        </Typography>
-      </CardContent>
-    </Card>
-  );
+                <Typography
+                variant="body1"
+                sx={{
+                    color: 'text.secondary',
+                    mt: 1.5,
+                    opacity: isComplete ? 1 : 0,
+                    transition: 'opacity 0.5s ease-in-out'
+                }}
+                >
+                {text ? "Generated by deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" : ""}
+                </Typography>
+            </CardContent>
+        </Card>
+    );
 };
 
 export default TypewriterText;

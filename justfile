@@ -6,6 +6,9 @@ set shell := ["powershell.exe", "-c"]
 run-back:
     cd backend | py -3.12 .\api.py
 
+dev-back:
+    cd backend | py -3.12 -m robyn .\api.py --dev
+
 # Run frontend with dev mode
 dev-front:
     cd frontend | pnpm run dev
@@ -19,3 +22,7 @@ install:
 clear-install:
   just clear
   just install
+
+# Get line count of all subdirectories, including .git-folder.
+linecount type:
+    dir . -filter "*{{type}}" -Recurse -name | foreach{(GC $_).Count} | measure-object -sum
