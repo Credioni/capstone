@@ -7,7 +7,7 @@
 
 # Usefull commands using `Justfile`
 
-**Build Faiss-embeddings**
+**Build Faiss-embeddings** -with empty text/arXiv-embeddings
 ```bash
 just build-faiss
 ```
