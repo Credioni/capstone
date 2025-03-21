@@ -7,13 +7,12 @@
 
 # Usefull commands using `Justfile`
 
-## Build faiss embeddings
+**Build Faiss-embeddings**
 ```bash
 just build-faiss
 ```
 
-
-# Start frontend & backend
+**Start Frontend & Backend**
 ```bash
 just run-front
 just run-back
