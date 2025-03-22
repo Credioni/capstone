@@ -12,11 +12,10 @@ from robyn import Request
 import logging
 import traceback
 
-from api_query_handler import handle_formdata_save
 from RAGembedder.arxiv_rag_system import ArXivRAGSystem
 from RAGembedder.multi_modal_embedder import MultimodalEmbedder
 
-from api_dirty import EnumEncoder, init_logger
+from api_dirty import EnumEncoder, init_logger, handle_formdata_save
 logger = logging.getLogger(__name__)
 init_logger(logger)
 
@@ -126,7 +125,7 @@ class QueryHandler:
             query_information = self._generate_query_json(
                 hash=hash,
                 status=QueueStatus.REGISTERED,
-                text=request.form_data["query"],
+                text=request.form_data["query"] if len(request.form_data["query"]) > 0 else None,
                 image=image_path,
                 audio=audio_path,
             )

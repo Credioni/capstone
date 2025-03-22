@@ -9,9 +9,6 @@ app = Robyn(__file__)
 ####################### API OF APIS ####################
 from api_queue import QueryHandler
 from api_dirty import init_logger, process_images, process_audio
-
-from api_saved_queries import contains_response, save_response
-from api_query_handler import handle_formdata_save, handle_query_log
 ####################### CORS ####################
 ALLOW_CORS(app, origins = ["http://localhost:3000"])
 ####################### LOGGING ####################

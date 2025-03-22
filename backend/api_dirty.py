@@ -11,6 +11,9 @@ from enum import Enum
 from typing import List
 
 from RAGembedder.multi_modal_embedder import ImageMetadata
+import logging
+from enum import Enum
+logger = logging.getLogger(__name__)
 
 
 class EnumEncoder(json.JSONEncoder):
@@ -22,14 +25,14 @@ class EnumEncoder(json.JSONEncoder):
 
 
 import logging
-from logging_formatter import CustomFormatter
+# from logging_formatter import CustomFormatter
 
 def init_logger(logger):
     logger.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    ch.setFormatter(CustomFormatter())
+    # ch.setFormatter(CustomFormatter())
     logger.addHandler(ch)
 
 
@@ -132,3 +135,58 @@ def process_images(images: List[ImageMetadata], logger):
             logger.error(traceback.format_exc())
 
     return processed_images
+
+class QueueStatus(Enum):
+    NOT_IN_SYSTEM = 0
+    REGISTERED = 1
+    WORKING = 2
+    INQUEUE = 3
+    FINISHED = 4
+
+
+def save_query_content():
+    pass
+
+def handle_formdata_save(files, folder_path="uploads"):
+    """Handle saving files to `folder`.
+
+    Args:
+        request (_type_): _description_
+        folder (str, optional): _description_. Defaults to "uploads".
+    """
+    os.makedirs(folder_path, exist_ok=True)
+
+    filenames = []
+    for filename, file in files.items():
+        filenames.append(filename)
+        filepath = os.path.join(folder_path, filename)
+
+        try:
+            with open(filepath, "wb") as f:
+                f.write(file)
+        except Exception as e:
+            logger.error(f"handle_formdata_save {e}")
+    return filenames
+
+def handle_query_log(uuid, form_data, filenames, folder_path="queries"):
+    try:
+        os.makedirs(folder_path, exist_ok=True)
+
+        uuid = str(uuid)
+        query_information = {
+            "id": uuid,
+            "text": form_data["query"],
+            "uploads": filenames,
+            "status" : QueueStatus.REGISTERED
+        }
+
+        filepath = os.path.join(folder_path, uuid + ".json")
+        with open(filepath, "w", encoding="utf-8") as file:
+            json.dump(query_information, file, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        logger.error(f"handle_query_log {e}")
+        return False
+
+    return True
+

@@ -11,6 +11,7 @@ from langchain.prompts import PromptTemplate
 from PIL import Image
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from .multi_modal_embedder import MultimodalEmbedder
+from .prompt import get_prompt
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -61,22 +62,6 @@ class ArXivRAGSystem:
         except Exception as e:
             logger.error(f"Failed to initialize multimodal embedder: {e}")
             raise
-
-    # def _initialize_retriever(self) -> ArXivRetriever:
-    #     """Initialize the arXiv document retriever."""
-    #     try:
-    #         retriever = ArXivRetriever(
-    #             index_path=self.config['faiss_index_path'],
-    #             mapping_path=self.config['mapping_path'],
-    #             projection_path=self.config['projection_path'],
-    #             image_folder=self.config['image_folder'],
-    #             device=self.device
-    #         )
-    #         logger.info("Initialized ArXiv retriever")
-    #         return retriever
-    #     except Exception as e:
-    #         logger.error(f"Failed to initialize retriever: {e}")
-    #         raise
 
     def _initialize_llm(self):
         """Initialize the language model with optimized settings."""
@@ -162,140 +147,6 @@ class ArXivRAGSystem:
 
         return cleaned_text
 
-    # def mm_query(self, question: str, k: int = 5) -> Dict[str, any]:
-    #     """
-    #     Query using the multimodal embedder.
-
-    #     Args:
-    #         question: The question to answer
-    #         k: Number of documents to retrieve
-
-    #     Returns:
-    #         A dictionary containing answer and sources
-    #     """
-    #     logger.info(f"Processing multimodal query: {question}")
-
-    #     try:
-    #         # Query using the multimodal embedder
-    #         search_results = self.mm_embedder.search({"text": question}, k=k)
-
-    #         # Prepare context from search results
-    #         context_parts = []
-    #         sources = []
-    #         images = []
-
-    #         # Process text results
-    #         if "text" in search_results:
-    #             for item in search_results["text"]:
-    #                 context_parts.append(f"TEXT CONTENT (score={item['score']:.2f}):\n{item['text']}")
-    #                 sources.append({
-    #                     "type": "text",
-    #                     "score": item["score"],
-    #                     "content": item["text"],
-    #                     "title": item.get("title", ""),
-    #                     "source": item.get("source", "")
-    #                 })
-
-    #         # Process image results
-    #         if "image" in search_results:
-    #             for item in search_results["image"]:
-    #                 context_parts.append(f"IMAGE CAPTION (score={item['score']:.2f}):\n{item['caption']}")
-    #                 sources.append({
-    #                     "type": "image",
-    #                     "score": item["score"],
-    #                     "path": item["path"],
-    #                     "caption": item["caption"]
-    #                 })
-    #                 try:
-    #                     images.append({
-    #                         "path": item["path"],
-    #                         "caption": item["caption"],
-    #                         "image": Image.open(item["path"])
-    #                     })
-    #                 except Exception as e:
-    #                     logger.error(f"Error loading image {item['path']}: {e}")
-
-    #         # Process video results
-    #         if "video" in search_results:
-    #             for item in search_results["video"]:
-    #                 if item.get("transcript"):
-    #                     context_parts.append(f"VIDEO TRANSCRIPT (score={item['score']:.2f}):\n{item['transcript'][:500]}...")
-    #                 else:
-    #                     context_parts.append(f"VIDEO TITLE (score={item['score']:.2f}):\n{item['title']}")
-
-    #                 sources.append({
-    #                     "type": "video",
-    #                     "score": item["score"],
-    #                     "video_id": item["video_id"],
-    #                     "title": item.get("title", ""),
-    #                     "transcript": item.get("transcript", "")[:500] + "..." if item.get("transcript") else ""
-    #                 })
-
-    #         # Create full context
-    #         context = "\n\n---\n\n".join(context_parts)
-
-    #         # Generate response using the LLM
-    #         # Prepare the prompt
-    #         prompt = self._prepare_prompt(context, question)
-
-    #         # Generate using the LLM pipeline
-    #         inputs = {
-    #             "text": prompt,
-    #             "max_new_tokens": 512,
-    #             "do_sample": True,
-    #             "temperature": 0.5,
-    #             "top_p": 0.95
-    #         }
-
-    #         generated_response = self.llm(inputs)
-    #         answer = self.clean_answer(generated_response[0]['generated_text'])
-
-    #         logger.info("Multimodal query processing completed")
-    #         return {
-    #             "answer": answer,
-    #             "sources": sources,
-    #             "images": images
-    #         }
-
-    #     except Exception as e:
-    #         logger.error(f"Error processing multimodal query: {e}")
-    #         return {
-    #             "answer": f"An error occurred while processing your query: {str(e)}",
-    #             "sources": [],
-    #             "images": []
-    #         }
-
-    def _prepare_prompt(self, context:list, question: str) -> str:
-        """
-        Prepare the prompt for the LLM.
-
-        Args:
-            context: The context information
-            question: The question to answer
-
-        Returns:
-            The formatted prompt
-        """
-        context = "\n\n" + "\n\n".join(context) + "\n\n"
-        return f"""<|im_start|>system
-You are a helpful, accurate, and concise research assistant specialized in scientific knowledge from arXiv papers. Your goal is to provide factual, well-structured answers based on the information provided.
-<|im_end|>
-<|im_start|>user
-I need a detailed and accurate answer to a scientific question. Please use only the provided context and don't make up information.
-Also reference to only one article based on provided context by it's number and title as you see best.
-CONTEXT_START
-{context}
-CONTEXT_END
-QUESTION:
-{question}
-<|im_end|>
-<|im_start|>assistant
-I'll answer the question based on the provided context, between the CONTEXT_START and CONTEXT_END.
-Each article is separated with number, followed by title, and next the abstract of the article.
-
-</think>
-"""
-
     def query(self, question:str, context:list, k:int = 5, score_threshold:float = 0.6) -> Dict:
         """
         Query the RAG system with a question and optional context.
@@ -317,7 +168,7 @@ Each article is separated with number, followed by title, and next the abstract 
 
         try:
             # Create a prompt with the provided context
-            prompt = self._prepare_prompt(context, question)
+            prompt = get_prompt(question, context)
 
             # Generate using the LLM pipeline
             generated_response = self.llm.invoke(prompt, max_new_tokens=512)

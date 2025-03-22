@@ -60,6 +60,7 @@ interface ResultYoutube {
 const LOADING_MSG = [
     "Searching response over 2.5 million reasearch papers...",
     "Searching throught various multimedia sources...",
+    "Searchin FAISS corresponding FAISS indices...",
 ]
 
 const RAG_LOADING_MSG = [
@@ -227,7 +228,7 @@ function ResultPage() {
 
                     <Divider className="pt-2" sx={{width: "95%", height:"2px", color: "#2c243c"}}/>
 
-                    <Card className="w-full pb-5 pl-1 justify-items-center">
+                    <Card className="w-full pb-5 pt-2 pl-1 justify-items-center">
                         <ImageDisplay images={results?.image} className="pb-5"/>
                         <Divider className="pt-2" sx={{width: "95%", height:"2px", color: "#2c243c"}}/>
                         <AudioDisplay audioFiles={results?.audio}/>
@@ -237,7 +238,7 @@ function ResultPage() {
                 {/* Youtube Videos */}
                 <Box
                     sx={{display: results?.audio == null ? "none": "block"}}
-                    className="grid-flow-col max-w-5xl w-full min-w-full justify-items-center pt-5 mt-7"
+                    className="grid-flow-col max-w-5xl min-w-full justify-items-center pt-5 mt-7"
                 >
                     <Typography className='w-fit justify-self-start' variant="h4">
                         {"You may find intrest in"}
