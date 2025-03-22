@@ -15,6 +15,7 @@ export default function SearchBar() {
     const [isDragging, setIsDragging] = useState(false);
     const [showMediaPreview, setShowMediaPreview] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,7 +35,7 @@ export default function SearchBar() {
 
             // Add all media files to the form data if they exist
             mediaFiles.forEach((mediaFile, index) => {
-                formData.append('media', mediaFile.file);
+                formData.append(mediaFile.file.name, mediaFile.file);
             });
 
             console.log("formData \n", formData)
@@ -63,17 +64,36 @@ export default function SearchBar() {
         } catch (error) {
             console.error('Error performing search:', error);
             // Handle error - you could show an error message to the user
-            alert('There was an error performing your search. Please try again.');
+            setErrorMessage('There was an error performing your search. Please try again.');
         } finally {
             setIsSearching(false);
         }
     };
 
+    // Validate file type
+    const isValidFileType = (file: File): boolean => {
+        // Only allow .png image files and .wav audio files
+        return (
+            (file.type === 'image/png') ||
+            (file.type === 'audio/wav')
+        );
+    };
+
     // Handle file selection via input button
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            addFiles(Array.from(e.target.files));
-            setShowMediaPreview(true);
+            const files = Array.from(e.target.files);
+            const validFiles = files.filter(file => isValidFileType(file));
+
+            if (validFiles.length < files.length) {
+                setErrorMessage('Only PNG images and WAV audio files are supported.');
+                setTimeout(() => setErrorMessage(''), 5000); // Clear error after 5 seconds
+            }
+
+            if (validFiles.length > 0) {
+                addFiles(validFiles);
+                setShowMediaPreview(true);
+            }
         }
     };
 
@@ -84,12 +104,10 @@ export default function SearchBar() {
         files.forEach(file => {
             // Determine file type
             let type = 'other';
-            if (file.type.startsWith('image/')) {
+            if (file.type === 'image/png') {
                 type = 'image';
-            } else if (file.type.startsWith('audio/')) {
+            } else if (file.type === 'audio/wav') {
                 type = 'audio';
-            } else if (file.type.startsWith('video/')) {
-                type = 'video';
             }
 
             // Create preview URL
@@ -122,10 +140,21 @@ export default function SearchBar() {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
+        setErrorMessage('');
 
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            addFiles(Array.from(e.dataTransfer.files));
-            setShowMediaPreview(true);
+            const files = Array.from(e.dataTransfer.files);
+            const validFiles = files.filter(file => isValidFileType(file));
+
+            if (validFiles.length < files.length) {
+                setErrorMessage('Only PNG images and WAV audio files are supported.');
+                setTimeout(() => setErrorMessage(''), 5000); // Clear error after 5 seconds
+            }
+
+            if (validFiles.length > 0) {
+                addFiles(validFiles);
+                setShowMediaPreview(true);
+            }
         }
     };
 
@@ -187,11 +216,6 @@ export default function SearchBar() {
                                             <span>🎵</span>
                                         </div>
                                     )}
-                                    {media.type === 'video' && (
-                                        <div className="thumbnail video-thumb">
-                                            <span>🎬</span>
-                                        </div>
-                                    )}
                                     <button
                                         type="button"
                                         className="remove-button"
@@ -205,13 +229,19 @@ export default function SearchBar() {
                     )}
                 </div>
 
+                {errorMessage && (
+                    <div className="error-message">
+                        {errorMessage}
+                    </div>
+                )}
+
                 <div className="search-actions">
                     <button
                         type="button"
                         className="multimedia-button"
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        Add Multimedia
+                        Add PNG/WAV
                     </button>
                     <button
                         type="submit"
@@ -226,7 +256,7 @@ export default function SearchBar() {
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*,audio/*,video/*"
+                    accept=".png,image/png,.wav,audio/wav"
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                     multiple
@@ -235,7 +265,7 @@ export default function SearchBar() {
                 {/* Drag and drop instruction */}
                 {isDragging && (
                     <div className="drop-zone-overlay">
-                        <p>Drop your files here</p>
+                        <p>Drop your PNG or WAV files here</p>
                     </div>
                 )}
             </form>

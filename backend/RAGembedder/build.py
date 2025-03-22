@@ -28,17 +28,6 @@ def embed_audios():
     embedder.save_indices_audio()
 
 def embed_images():
-    # Example images (paths would be different in your system)
-    # images = [
-    #     {
-    #         "id": 1,
-    #         "path": "tmp/image1.png",
-    #         "caption": "Diagram of a Retrieval Augmented Generation system",
-    #         "source": "Research paper figure"
-    #     },
-    # ]
-
-
     filepaths = glob.glob("embedding_data/image/*")
     print("Processing image files..")
     print(*filepaths, sep="\n")
