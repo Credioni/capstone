@@ -35,6 +35,9 @@ function ResultItemVideo({index=1, video, ...args}) {
                     allowFullScreen
                 ></iframe>
             </CardContent>
+            <Typography className="justify-self-center" variant="body2">
+                {"Faiss score: " + video.score.toFixed(3) }
+            </Typography>
         </Card>
     );
 }

@@ -53,13 +53,9 @@ const DUMMYrightPanelData = {
 function formDOI(num) {
     // Convert number to string and split at the decimal point
     let [integerPart, decimalPart] = num.toString().split(".");
-
-    // Pad the integer part with leading zeros if necessary
     integerPart = integerPart.padStart(4, "0");
-
     // Pad the decimal part with trailing zeros if necessary, ensuring 4 digits
     decimalPart = (decimalPart || "").padEnd(4, "0");
-
     return `${integerPart}.${decimalPart}`;
 }
 
@@ -116,6 +112,13 @@ const InfoSection = ({ title, items, onItemHover, onItemClick }) => {
 };
 
 function ResultItemInfo({ info, ...args }) {
+    const DUMMY_CONTENT = [
+        "Plotted Relevant information",
+        "Temperature as an function of Score",
+        "Deepthink paragraph",
+        "Paragraph",
+    ];
+
     const [previewItem, setPreviewItem] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [isPreviewFrozen, setIsPreviewFrozen] = useState(false);
@@ -241,7 +244,7 @@ function ResultCard({index, result, ...args }) {
 
                 {/* Right Side - Info */}
                 <ResultItemInfo
-                    className='flex-2 ml-5 mr-2 max-w-70'
+                    className='flex-2 ml-5 max-w-70'
                     info={DUMMYrightPanelData}
                     // onPreviewChange={setHoveredItem}
                 />

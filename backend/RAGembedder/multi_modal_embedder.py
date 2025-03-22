@@ -92,7 +92,7 @@ class MultimodalEmbedder:
 
     device: Any = field(init=False, default=None)
 
-    text_metadata:  List[TextMetadata]  = field(default_factory=list)
+    text_metadata: List[TextMetadata] = field(default_factory=list)
     image_metadata: List[ImageMetadata] = field(default_factory=list)
     video_metadata: List[VideoMetadata] = field(default_factory=list)
     audio_metadata: List[AudioMetadata] = field(default_factory=list)
@@ -123,49 +123,52 @@ class MultimodalEmbedder:
         self.whisper_processor = WhisperProcessor.from_pretrained(self.whisper_model_name)
         self.whisper_model = WhisperForConditionalGeneration.from_pretrained(self.whisper_model_name)
         self.whisper_model.to(self.device)
+
+        # Add projection layers to map between embedding spaces
+        # These help with cross-modal search between different modalities
+        self.text_to_image_projection = torch.nn.Linear(self.text_dim, self.image_dim)
+        self.text_to_image_projection.to(self.device)
+
+        self.image_to_text_projection = torch.nn.Linear(self.image_dim, self.text_dim)
+        self.image_to_text_projection.to(self.device)
+
         # Create FAISS indices
         self.setup_indices()
 
-
     def search(self, query: Dict[str, Any], k: int = 5) -> dict:
-        """Search indexed
-        content based on multiple query types (text, image, audio).
+        """Search indexed content based on multiple query types (text, image, audio).
         Each query type can search across all modalities where applicable.
 
         Args:
             query (Dict[str, Any]): Dictionary containing query information:
                 - text: Text query string (optional)
                 - image: Path to image file for image query (optional)
-                - image: Path to audio file for audio query (optional)
+                - audio: Path to audio file for audio query (optional)
             k: Number of results to return per modality. Defaults to 5.
 
         Returns:
             dict: Dict with results organized by modality (text, image, video, audio).
         """
-
         results = {}
-        text_embedding  = None
+        text_embedding = None
         image_embedding = None
         audio_embedding = None
+        image_for_text_embedding = None  # Specialized embedding for image-to-text search
 
         ######## Process all provided query types to generate embeddings #########
         # Process text query
         if query_text := query.get("text"):
             text_embedding = self.get_text_embedding(query_text)
 
-        # Process image query
+        # Process image query - now with image-to-text option
         if image_path := query.get("image"):
             try:
-                import cv2
-                image = cv2.imread(image_path)
-                if image is not None:
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    inputs = self.clip_processor(images=image, return_tensors="pt").to(self.device)
-                    with torch.no_grad():
-                        image_features = self.clip_model.get_image_features(**inputs)
-                        image_embedding = image_features.cpu().numpy()
-                        # Normalize for cosine similarity
-                        image_embedding = image_embedding / np.linalg.norm(image_embedding, axis=1, keepdims=True)
+                # Standard image embedding for image-to-image search
+                image_embedding = self.get_image_embedding(image_path)
+
+                # Specialized embedding for image-to-text search
+                image_for_text_embedding = self.get_image_to_text_embedding(image_path)
+
             except Exception as e:
                 logger.error(f"Error processing image query: {e}")
 
@@ -173,22 +176,10 @@ class MultimodalEmbedder:
         if audio_path := query.get("audio"):
             logger.info(f"{audio_path = }")
             try:
-                # Transcribe audio and get text embedding from transcript
-                audio_array, sample_rate = librosa.load(audio_path, sr=16000)
-                inputs = self.whisper_processor(
-                    audio_array,
-                    sampling_rate=sample_rate,
-                    return_tensors="pt"
-                ).to(self.device)
+                # Get transcript from audio
+                transcript = self.get_transcript_from_audio(audio_path)
 
-                with torch.no_grad():
-                    outputs = self.whisper_model.generate(**inputs, max_length=448)
-                    transcript = self.whisper_processor.batch_decode(
-                        outputs,
-                        skip_special_tokens=True
-                    )[0]
-
-                # Generate text embedding
+                # Generate text embedding from transcript
                 audio_embedding = self.get_text_embedding(transcript)
 
                 # Store transcript in results for user context
@@ -196,88 +187,74 @@ class MultimodalEmbedder:
             except Exception as e:
                 logger.error(f"Error processing audio query: {e}")
 
-
-
         ###### Search all modalities using available embeddings #####
 
-        # Search text index
-        if text_embedding is not None or audio_embedding is not None:
-            # Embedding to use for text search (prioritize text over audio)
-            search_embedding = text_embedding if text_embedding is not None else audio_embedding
-            scores, indices = self.text_index.search(search_embedding, k)
+        # Search text index - now supporting image-to-text search
+        if text_embedding is not None or audio_embedding is not None or image_for_text_embedding is not None:
+            # Determine which embedding to use (prioritize in this order: text, image-for-text, audio)
+            if text_embedding is not None:
+                search_embedding = text_embedding
+            elif image_for_text_embedding is not None:
+                search_embedding = image_for_text_embedding
+            else:
+                search_embedding = audio_embedding
 
-            text_results = []
-            for score, idx in zip(scores[0], indices[0]):
-                if idx >= 0 and idx < len(self.text_metadata):
-                    result_dict = vars(self.text_metadata[idx])
-                    result_dict["score"] = float(score)
-                    text_results.append(result_dict)
-
-            results["text"] = text_results
+            results["text"] = self.search_modality(search_embedding, self.text_index, self.text_metadata, k)
 
         # Search image index
         if text_embedding is not None or image_embedding is not None:
-            # For text-to-image search, convert text embedding to image space
+            # For text-to-image search, convert text embedding to image space using CLIP
             if text_embedding is not None and image_embedding is None:
-                # CLIP convert text to image embedding
-                inputs = self.clip_processor(text=query["text"], return_tensors="pt", padding=True).to(self.device)
-                with torch.no_grad():
-                    search_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
-                    search_embedding = search_embedding / np.linalg.norm(search_embedding, axis=1, keepdims=True)
+                search_embedding = self.get_text_to_image_embedding(query["text"])
             else:
                 search_embedding = image_embedding
 
-            scores, indices = self.image_index.search(search_embedding, k)
+            results["image"] = self.search_modality(search_embedding, self.image_index, self.image_metadata, k)
 
-            image_results = []
-            for score, idx in zip(scores[0], indices[0]):
-                if idx >= 0 and idx < len(self.image_metadata):
-                    result_dict = vars(self.image_metadata[idx])
-                    result_dict["score"] = float(score)
-                    image_results.append(result_dict)
-
-            results["image"] = image_results
-
-        # Search video index
+        # Search video index - similar approach to images
         if text_embedding is not None or image_embedding is not None:
-            # Same embedding approach as with images
+            # For text-to-video search, same as text-to-image
             if text_embedding is not None and image_embedding is None:
-                inputs = self.clip_processor(
-                    text=query["text"],
-                    return_tensors="pt",
-                    padding=True
-                ).to(self.device)
-                with torch.no_grad():
-                    search_embedding = self.clip_model.get_text_features(**inputs).cpu().numpy()
-                    search_embedding = search_embedding / np.linalg.norm(search_embedding, axis=1, keepdims=True)
+                search_embedding = self.get_text_to_image_embedding(query["text"])
             else:
                 search_embedding = image_embedding
 
-            scores, indices = self.video_index.search(search_embedding, k)
+            results["video"] = self.search_modality(search_embedding, self.video_index, self.video_metadata, k)
 
-            video_results = []
-            for score, idx in zip(scores[0], indices[0]):
-                if idx >= 0 and idx < len(self.video_metadata):
-                    result_dict = vars(self.video_metadata[idx])
-                    result_dict["score"] = float(score)
-                    video_results.append(result_dict)
+        # Search audio index - Use text embedding or image-to-text embedding for searching
+        if text_embedding is not None or audio_embedding is not None or image_for_text_embedding is not None:
+            if text_embedding is not None:
+                search_embedding = text_embedding
+            elif image_for_text_embedding is not None:
+                search_embedding = image_for_text_embedding
+            else:
+                search_embedding = audio_embedding
 
-            results["video"] = video_results
+            results["audio"] = self.search_modality(search_embedding, self.audio_index, self.audio_metadata, k)
 
-        # Search audio index
-        if text_embedding is not None or audio_embedding is not None:
-            # Choose the embedding to use for audio
-            search_embedding = text_embedding if text_embedding is not None else audio_embedding
-            scores, indices = self.audio_index.search(search_embedding, k)
+        return results
 
-            audio_results = []
-            for score, idx in zip(scores[0], indices[0]):
-                if idx >= 0 and idx < len(self.audio_metadata):
-                    result_dict = vars(self.audio_metadata[idx])
-                    result_dict["score"] = float(score)
-                    audio_results.append(result_dict)
+    def search_modality(self, query_embedding: np.ndarray, modality_index, modality_metadata, k: int = 5):
+        """
+        Generic search method for any modality.
 
-            results["audio"] = audio_results
+        Args:
+            query_embedding: The query embedding vector
+            modality_index: FAISS index for the modality
+            modality_metadata: List of metadata for the modality
+            k: Number of results to return
+
+        Returns:
+            List of results with scores
+        """
+        scores, indices = modality_index.search(query_embedding, k)
+
+        results = []
+        for score, idx in zip(scores[0], indices[0]):
+            if idx >= 0 and idx < len(modality_metadata):
+                result_dict = vars(modality_metadata[idx])
+                result_dict["score"] = float(score)
+                results.append(result_dict)
 
         return results
 
@@ -301,6 +278,63 @@ class MultimodalEmbedder:
         embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
         return embeddings
 
+    def get_text_to_image_embedding(self, text: str) -> np.ndarray:
+        """
+        Generate CLIP text embeddings that align with the image embedding space.
+        This is specifically designed for text-to-image search.
+
+        Args:
+            text: The text query
+
+        Returns:
+            Embedding vector aligned with CLIP's visual space
+        """
+        inputs = self.clip_processor(text=text, return_tensors="pt", padding=True).to(self.device)
+
+        with torch.no_grad():
+            text_features = self.clip_model.get_text_features(**inputs)
+            embeddings = text_features.cpu().numpy()
+
+        # Normalize for cosine similarity
+        embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+        return embeddings
+
+    def get_image_to_text_embedding(self, image_path: str) -> np.ndarray:
+        """
+        Generate image embeddings that align well with the text embedding space.
+        This is specifically designed for image-to-text search.
+
+        Args:
+            image_path: Path to the image file
+
+        Returns:
+            Embedding vector aligned with text space
+        """
+        try:
+            # Load and process image
+            image = cv2.imread(image_path)
+            if image is None:
+                raise ValueError(f"Failed to load image: {image_path}")
+
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            inputs = self.clip_processor(images=image, return_tensors="pt").to(self.device)
+
+            with torch.no_grad():
+                # Get image features from CLIP
+                image_features = self.clip_model.get_image_features(**inputs)
+
+                # Apply projection to align with text embedding space
+                projected_features = self.image_to_text_projection(image_features)
+                embeddings = projected_features.cpu().numpy()
+
+            # Normalize for cosine similarity
+            embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+            return embeddings
+
+        except Exception as e:
+            logger.error(f"Error processing image for text search: {e}")
+            return np.zeros((1, self.text_dim))
+
     def get_image_embedding(self, image_path: str) -> np.ndarray:
         """Generate embeddings for an image using CLIP"""
         try:
@@ -320,6 +354,36 @@ class MultimodalEmbedder:
             print(f"Error processing image {image_path}: {e}")
             return np.zeros((1, self.image_dim))
 
+    def get_transcript_from_audio(self, audio_path: str) -> str:
+        """
+        Transcribe audio file to text using Whisper model.
+
+        Args:
+            audio_path: Path to audio file
+
+        Returns:
+            Transcribed text
+        """
+        try:
+            audio_array, sample_rate = librosa.load(audio_path, sr=16000)
+            inputs = self.whisper_processor(
+                audio_array,
+                sampling_rate=sample_rate,
+                return_tensors="pt"
+            ).to(self.device)
+
+            with torch.no_grad():
+                outputs = self.whisper_model.generate(**inputs, max_length=448)
+                transcript = self.whisper_processor.batch_decode(
+                    outputs,
+                    skip_special_tokens=True
+                )[0]
+
+            return transcript
+        except Exception as e:
+            logger.error(f"Error transcribing audio {audio_path}: {e}")
+            return ""
+
     def get_youtube_video_embedding(self, video_id:str, num_frames:int = 5) -> Tuple[np.ndarray, VideoMetadata]:
         """ Generate embeddings for a YouTube video by:
             1. Downloading the video
@@ -328,7 +392,6 @@ class MultimodalEmbedder:
             4. Averaging them into a single embedding
             5. Getting transcript if available
         """
-        # try:
         # Create a temporary directory for the video
         video_folderpath = os.path.join("embedding_data", "video")
         os.makedirs(video_folderpath, exist_ok=True)
@@ -402,10 +465,48 @@ class MultimodalEmbedder:
         # Fallback if no frames were processed
         return np.zeros((1, self.video_dim)), metadata
 
-        # except Exception as e:
-        #     print(f"Error processing video {video_id}: {e}")
-        #     error_metadata = VideoMetadata(video_id=video_id, error=str(e))
-        #     return np.zeros((1, self.video_dim)), error_metadata
+    def get_audio_embedding(self, audio_path: str) -> Tuple[np.ndarray, AudioMetadata]:
+        """
+        Generate embeddings for an audio file by:
+        1. Loading the audio file
+        2. Transcribing it using Whisper
+        3. Getting text embeddings for the transcription
+
+        Args:
+            audio_path: Path to the audio file
+
+        Returns:
+            Tuple of audio embedding and metadata
+        """
+        try:
+            # Create metadata object
+            metadata = AudioMetadata(
+                id=os.path.basename(audio_path),
+                path=audio_path
+            )
+
+            # Load audio using librosa
+            audio_array, sample_rate = librosa.load(audio_path, sr=16000)
+            metadata.sample_rate = sample_rate
+            metadata.duration_seconds = len(audio_array) / sample_rate
+
+            # Get transcript
+            transcript = self.get_transcript_from_audio(audio_path)
+            metadata.transcript = transcript
+
+            # Get text embedding of the transcription
+            text_embedding = self.get_text_embedding(transcript)
+
+            return text_embedding, metadata
+
+        except Exception as e:
+            print(f"Error processing audio {audio_path}: {e}")
+            error_metadata = AudioMetadata(
+                id=os.path.basename(audio_path),
+                path=audio_path,
+                error=str(e)
+            )
+            return np.zeros((1, self.audio_dim)), error_metadata
 
     def index_documents(self, documents: List[Dict[str, str]]):
         """Index text documents with metadata"""
@@ -453,61 +554,32 @@ class MultimodalEmbedder:
             self.video_index.add(embedding)
             self.video_metadata.append(metadata)
 
-    def get_audio_embedding(self, audio_path: str) -> Tuple[np.ndarray, AudioMetadata]:
+    def project_text_to_image_space(self, text_embedding: np.ndarray) -> np.ndarray:
         """
-        Generate embeddings for an audio file by:
-        1. Loading the audio file
-        2. Transcribing it using Whisper
-        3. Getting text embeddings for the transcription
+        Project text embeddings to image embedding space using the projection layer.
 
         Args:
-            audio_path: Path to the audio file
+            text_embedding: Text embeddings in original text space (384-dim)
 
         Returns:
-            Tuple of audio embedding and metadata
+            Projected embeddings in image space (512-dim)
         """
         try:
-            # Create metadata object
-            metadata = AudioMetadata(
-                id=os.path.basename(audio_path),
-                path=audio_path
-            )
+            # Convert numpy array to tensor
+            tensor_embedding = torch.tensor(text_embedding).to(self.device)
 
-            # Load audio using librosa
-            audio_array, sample_rate = librosa.load(audio_path, sr=16000)
-            metadata.sample_rate = sample_rate
-            metadata.duration_seconds = len(audio_array) / sample_rate
-
-            # Convert to format expected by Whisper
-            inputs = self.whisper_processor(
-                audio_array,
-                sampling_rate=sample_rate,
-                return_tensors="pt"
-            ).to(self.device)
-
-            # Generate transcription
+            # Apply projection
             with torch.no_grad():
-                outputs = self.whisper_model.generate(**inputs, max_length=448)
-                transcription = self.whisper_processor.batch_decode(
-                    outputs,
-                    skip_special_tokens=True
-                )[0]
+                projected = self.text_to_image_projection(tensor_embedding)
 
-            metadata.transcript = transcription
+            # Convert back to numpy and normalize
+            projected_np = projected.cpu().numpy()
+            projected_np = projected_np / np.linalg.norm(projected_np, axis=1, keepdims=True)
 
-            # Get text embedding of the transcription
-            text_embedding = self.get_text_embedding(transcription)
-
-            return text_embedding, metadata
-
+            return projected_np
         except Exception as e:
-            print(f"Error processing audio {audio_path}: {e}")
-            error_metadata = AudioMetadata(
-                id=os.path.basename(audio_path),
-                path=audio_path,
-                error=str(e)
-            )
-            return np.zeros((1, self.audio_dim)), error_metadata
+            logger.error(f"Error projecting text to image space: {e}")
+            return np.zeros((1, self.image_dim))
 
     def save_indices_images(self, directory:str="faiss_indices"):
         """Save FAISS indices and metadata to disk"""
@@ -577,4 +649,6 @@ class MultimodalEmbedder:
 
         audio_data = pd.read_json(os.path.join(current_dir, "audio_metadata.json"), orient="records").to_dict("records")
         self.audio_metadata = [AudioMetadata(**item) for item in audio_data]
+
+
 

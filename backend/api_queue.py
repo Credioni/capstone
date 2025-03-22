@@ -31,7 +31,7 @@ class QueueStatus(Enum):
 
 @dataclass
 class QueryHandler:
-    """ Handles Queries made to backend """
+    """ Handles queries made to backend """
 
     # Queue -list that rag_thread handles
     faiss_queue: set[int] = field(default_factory=set)
@@ -87,14 +87,18 @@ class QueryHandler:
                     if self.rag_queue and (hash := self.rag_queue.pop()):
                         result = self.get_result_json(hash)
                         texts = result["results"].get("text", None)
-                        context = [(
-                                    f"Article {i}:"
-                                    + x.get("title")
-                                    + "\n"
-                                    + x.get("text", "")
-                                ) for i, x in enumerate(texts[:3])]
+                        if texts:
+                            context = [(
+                                        f"Article {i+1}:"
+                                        + x.get("title")
+                                        + "\n"
+                                        + x.get("text", "")
+                                    ) for i, x in enumerate(texts[:3])]
+                        else:
+                            context = [""]
 
                         answer = rag.query(result.get("query_text"), context=context)
+                        answer = answer if answer is not None else ""
                         self.register_rag_answer(hash, answer)
                     else:
                         time.sleep(1)
@@ -106,14 +110,6 @@ class QueryHandler:
         self.rag_thread.start()
 
     def register_query(self, request: Request) -> Optional[Hash]:
-        hashable_body = pickle.dumps(request.body)
-        hash = hashlib.sha256(hashable_body).hexdigest()
-
-        # Check if already registered
-        if self.is_registered(hash):
-            logger.info(f"Query with hash {hash} already registered.")
-            return hash
-
         try:
             os.makedirs(self.query_path, exist_ok=True)
 
@@ -123,13 +119,21 @@ class QueryHandler:
             audio_path = next(filter(lambda file: file.endswith(".wav"), filenames), None)
 
             query_information = self._generate_query_json(
-                hash=hash,
                 status=QueueStatus.REGISTERED,
                 text=request.form_data["query"] if len(request.form_data["query"]) > 0 else None,
                 image=image_path,
                 audio=audio_path,
             )
 
+            # Get hash based on query_information
+            hash = hashlib.sha256(pickle.dumps(query_information)).hexdigest()
+            query_information['id'] = str(hash)
+
+            if self.is_registered(hash):
+                logger.info(f"Query with hash {hash} already registered.")
+                return hash
+
+            # Save query
             filepath = os.path.join(self.query_path, hash + ".json")
             with open(filepath, "w", encoding="utf-8") as file:
                 json.dump(query_information, file, ensure_ascii=False, indent=2, cls=EnumEncoder)
@@ -138,7 +142,8 @@ class QueryHandler:
             self.faiss_queue_push(hash)
 
         except Exception as e:
-            logger.error(f"handle_query_log {e}")
+            logger.error(f"Register query log error {e}")
+            logger.error(traceback.format_exc())
             return None
 
         logger.info(f"Queue: {list(self.faiss_queue)}")
@@ -213,13 +218,12 @@ class QueryHandler:
         self._json_dump(self.path_to_query_json(hash), query)
 
 
-    def _generate_query_json(self, hash, status, **kwargs):
+    def _generate_query_json(self, status, **kwargs):
         return {
-            "id"  : hash,
             "text": kwargs.get("text", None),
             "image": kwargs.get("image", None),
             "audio": kwargs.get("audio", None),
-            "status" : QueueStatus.REGISTERED,
+            "status" : status,
         }
 
     def _json_dump(self, filepath, content):

@@ -78,7 +78,6 @@ class ArXivRAGSystem:
                 device_map=self.device,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 trust_remote_code=True,
-                # Add low_cpu_mem_usage for better performance on limited resources
                 low_cpu_mem_usage=True
             )
 
@@ -88,11 +87,10 @@ class ArXivRAGSystem:
                 model=model,
                 tokenizer=tokenizer,
                 max_new_tokens=512,  # Increased for more detailed answers
-                temperature=0.5,  # Reduced for more focused responses
-                top_p=0.95,  # Slightly increased for more creativity while staying factual
+                temperature=0.5,     # Reduced for more focused responses
+                top_p=0.95,          # Slightly increased for more creativity while staying factual
                 repetition_penalty=1.15,  # Slightly increased to avoid repetition
                 do_sample=True,
-                # Added stopping criteria for better generation
                 eos_token_id=tokenizer.eos_token_id,
                 pad_token_id=tokenizer.eos_token_id
             )
@@ -150,6 +148,7 @@ class ArXivRAGSystem:
     def query(self, question:str, context:list, k:int = 5, score_threshold:float = 0.6) -> Dict:
         """
         Query the RAG system with a question and optional context.
+        Incorporates a thinking step to improve answer quality.
 
         Args:
             question: The question to answer
@@ -158,26 +157,37 @@ class ArXivRAGSystem:
             score_threshold: Threshold for filtering documents by score
 
         Returns:
-            A dictionary containing:
-                - answer: The generated answer
-                - sources: The source documents used for the answer
-                - images: Any images referenced in the sources
+            A dictionary containing the full, unmodified response from the model
         """
         logger.info(f"Processing query: {question}")
-        logger.debug(f"Context provided:\n{context}")
+        logger.debug(f"Context provided: {len(context)} documents")
 
         try:
-            # Create a prompt with the provided context
+            # Generate prompt with thinking step
             prompt = get_prompt(question, context)
 
-            # Generate using the LLM pipeline
-            generated_response = self.llm.invoke(prompt, max_new_tokens=512)
-            # answer = self.clean_answer(generated_response[0]['generated_text'])
-            logger.info("Generation completed processing completed")
-            logger.info(json.dumps(generated_response, indent=2))
+            # Configure thinking parameters
+            thinking_params = {
+                "max_new_tokens": 2048,     # More tokens for in-depth thinking
+                "temperature": 0.35,        # Lower temperature for more focused reasoning
+                "repetition_penalty": 1.2,  # Slightly higher to prevent circular reasoning
+                "top_p": 0.85               # More focused sampling for logical coherence
+            }
+
+            # Generate response with thinking parameters
+            logger.info("Generating response with thinking step...")
+            generated_response = self.llm.invoke(
+                prompt,
+                max_new_tokens=thinking_params["max_new_tokens"],
+                temperature=thinking_params["temperature"],
+                repetition_penalty=thinking_params["repetition_penalty"],
+                top_p=thinking_params["top_p"]
+            )
+            logger.info("Generation completed")
 
             return generated_response
+
         except Exception as e:
             logger.error(f"Error processing query: {e}")
             logger.error(traceback.format_exc())
-            return None
+            return f"An error occurred while processing your query: {str(e)}"
