@@ -151,7 +151,7 @@ class MultimodalEmbedder:
     def search(self, query: Dict[str, Any], k: int = 5) -> dict:
         """
         Search indexed content based on multiple query types (text, image, audio).
-        Each query type can search across all modalities where applicable.
+        Each query type searches across all modalities, and the best results are returned.
 
         Args:
             query: Dictionary containing query information:
@@ -163,60 +163,123 @@ class MultimodalEmbedder:
         Returns:
             dict: Dict with results organized by modality (text, image, video, audio).
         """
-        results = {}
-        text_embedding = None
-        image_embedding = None
-        audio_embedding = None
-        image_for_text_embedding = None  # Specialized embedding for image-to-text search
+        # Generate embeddings for each query type if available
+        embeddings = {}
+        results = {"audio_transcript": None}  # Initialize results
 
-        ######## Process all provided query types to generate embeddings #########
         # Process text query
         if query_text := query.get("text"):
-            text_embedding = self.get_text_embedding(query_text)
+            logger.info(f"Processing text query: {query_text[:50]}...")
+            embeddings["text"] = self.get_text_embedding(query_text)
 
-        # Process image query - now with image-to-text option
+            # Also get text-to-image projection for image search
+            embeddings["text_to_image"] = self.get_text_to_image_embedding(embeddings["text"])
+
+        # Process image query
         if image_path := query.get("image"):
+            logger.info(f"Processing image query: {image_path}")
             try:
-                # Standard image embedding for image-to-image search
-                image_embedding = self.get_image_embedding(image_path)
-
-                # Specialized embedding for image-to-text search
-                image_for_text_embedding = self.get_image_to_text_embedding(image_path)
-
+                embeddings["image"] = self.get_image_embedding(image_path)
+                embeddings["image_to_text"] = self.get_image_to_text_embedding(image_path)
             except Exception as e:
                 logger.error(f"Error processing image query: {e}")
 
         # Process audio query
         if audio_path := query.get("audio"):
-            logger.info(f"{audio_path = }")
+            logger.info(f"Processing audio query: {audio_path}")
             try:
-                # Process audio consistently with how we index it
-                audio_embedding, audio_metadata = self.get_audio_embedding(audio_path)
-
-                # Store transcript in results for user context
+                embedding, audio_metadata = self.get_audio_embedding(audio_path)
+                embeddings["audio"] = embedding
                 results["audio_transcript"] = audio_metadata.transcript
+                logger.info(f"Audio transcript: {audio_metadata.transcript[:50]}...")
             except Exception as e:
                 logger.error(f"Error processing audio query: {e}")
 
-        ###### Search all modalities using available embeddings #####
-        results = self._perform_search(
-            text_embedding=text_embedding,
-            image_embedding=image_embedding,
-            audio_embedding=audio_embedding,
-            image_for_text_embedding=image_for_text_embedding,
-            k=k
-        )
+        # Initialize best results for each modality
+        best_results = {
+            "text": [],
+            "image": [],
+            "video": [],
+            "audio": []
+        }
+
+        # Search each modality with all available embeddings
+        # and keep track of the best results
+
+        # 1. Search text index with all compatible embeddings
+        if self.text_index.ntotal > 0:
+            for embed_type, embed in embeddings.items():
+                if embed_type in ["text", "image_to_text", "audio"]:
+                    # These embedding types are compatible with text search
+                    search_results = self.search_modality(embed, self.text_index, self.text_metadata, k)
+                    best_results["text"] = self._merge_best_results(best_results["text"], search_results, k)
+
+        # 2. Search image index with all compatible embeddings
+        if self.image_index.ntotal > 0:
+            for embed_type, embed in embeddings.items():
+                if embed_type in ["image", "text_to_image"]:
+                    # These embedding types are compatible with image search
+                    search_results = self.search_modality(embed, self.image_index, self.image_metadata, k)
+                    best_results["image"] = self._merge_best_results(best_results["image"], search_results, k)
+
+        # 3. Search video index with all compatible embeddings
+        if self.video_index.ntotal > 0:
+            for embed_type, embed in embeddings.items():
+                if embed_type in ["image", "text_to_image"]:
+                    # These embedding types are compatible with video search
+                    search_results = self.search_modality(embed, self.video_index, self.video_metadata, k)
+                    best_results["video"] = self._merge_best_results(best_results["video"], search_results, k)
+
+        # 4. Search audio index with all compatible embeddings
+        if self.audio_index.ntotal > 0:
+            for embed_type, embed in embeddings.items():
+                if embed_type in ["audio", "text", "image_to_text"]:
+                    # These embedding types are compatible with audio search
+                    search_results = self.search_modality(embed, self.audio_index, self.audio_metadata, k)
+                    best_results["audio"] = self._merge_best_results(best_results["audio"], search_results, k)
+
+        # Update results with best matches
+        results.update(best_results)
+
+        # Log result counts
+        for key, value in results.items():
+            if isinstance(value, list):
+                logger.info(f"Found {len(value)} results for {key}")
 
         return results
 
-    def _perform_search(
-            self,
-            text_embedding=None,
-            image_embedding=None,
-            audio_embedding=None,
-            image_for_text_embedding=None,
-            k=5
-        ):
+    def _merge_best_results(self, existing_results, new_results, k):
+        """
+        Merge two lists of results, keeping only the k items with the highest scores.
+
+        Args:
+            existing_results: Current list of results
+            new_results: New results to merge
+            k: Maximum number of results to keep
+
+        Returns:
+            Merged list with the top k results
+        """
+        # Create a dictionary to track best scores for each unique item
+        merged = {}
+
+        # Add existing results to the dictionary
+        for item in existing_results:
+            item_id = item.get("id", "") or item.get("video_id", "")
+            merged[item_id] = item
+
+        # Add or update with new results if they have better scores
+        for item in new_results:
+            item_id = item.get("id", "") or item.get("video_id", "")
+            if item_id not in merged or item.get("score", 0) > merged[item_id].get("score", 0):
+                merged[item_id] = item
+
+        # Sort by score (highest first) and take top k
+        sorted_results = sorted(merged.values(), key=lambda x: x.get("score", 0), reverse=True)
+        return sorted_results[:k]
+
+    def _perform_search(self, text_embedding=None, image_embedding=None,
+                        audio_embedding=None, image_for_text_embedding=None, k=5):
         """
         Helper method to perform search across all modalities based on available embeddings.
         Centralizes the search logic for better consistency.
@@ -255,16 +318,16 @@ class MultimodalEmbedder:
 
             results["video"] = self.search_modality(search_embedding, self.video_index, self.video_metadata, k)
 
-        # Search audio index - Use text embedding or image-to-text embedding for searching
-        if any(emb is not None for emb in [text_embedding, audio_embedding, image_for_text_embedding]):
-            if text_embedding is not None:
-                search_embedding = text_embedding
-            elif image_for_text_embedding is not None:
-                search_embedding = image_for_text_embedding
-            else:
-                search_embedding = audio_embedding
-
-            results["audio"] = self.search_modality(search_embedding, self.audio_index, self.audio_metadata, k)
+        # Search audio index
+        # Always use audio embedding directly when available (no projection needed)
+        if audio_embedding is not None:
+            results["audio"] = self.search_modality(audio_embedding, self.audio_index, self.audio_metadata, k)
+        # Fall back to text-based search if no audio embedding
+        elif text_embedding is not None:
+            results["audio"] = self.search_modality(text_embedding, self.audio_index, self.audio_metadata, k)
+        # Use image-to-text if that's all we have
+        elif image_for_text_embedding is not None:
+            results["audio"] = self.search_modality(image_for_text_embedding, self.audio_index, self.audio_metadata, k)
 
         return results
 
