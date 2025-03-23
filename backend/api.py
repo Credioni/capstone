@@ -10,16 +10,18 @@ app = Robyn(__file__)
 from api_queue import QueryHandler
 from api_dirty import init_logger, process_images, process_audio
 ####################### CORS ####################
-ALLOW_CORS(app, origins = ["http://localhost:3000"])
+ALLOW_CORS(app, origins=[
+    "http://localhost:3000", # If running just normal enviroment
+    "http://frontend:3000",  # For Docker service-to-service communication
+    "http://127.0.0.1:3000"  # Fallback for local development
+])
+# ALLOW_CORS(app, origins = ["http://localhost:3000"])
 ####################### LOGGING ####################
 logger = logging.getLogger(__name__)
 init_logger(logger)
-####################### CONFIG AND RAG ####################
-# Handles the queue of queries
-# config = load_configuration(logger)
-# rag_system = ArXivRAGSystem(config=config)
 ####################### BACKEND API CALL INTERFACE ####################
 
+# Handles the queries - all the magic of the Backend
 QUERY_HANDLER = QueryHandler()
 
 
@@ -29,7 +31,6 @@ async def home(request):
     Query support for text, .wav, and .png search
     """
     return "Hello, world!"
-
 
 
 @app.post("/query")

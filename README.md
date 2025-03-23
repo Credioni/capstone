@@ -19,7 +19,7 @@ Create a scientific research assistant that retrieves related text, images, and 
 papers.
 
 ## Requirements & Installation [Justfile](https://github.com/casey/just)
-Make sure these are installed:\
+Make sure these are installed:
 1. [Node.js](https://nodejs.org/en)
 2. [Python 3.12.X](https://www.python.org/downloads/)
 3. Recommended [Justfile](https://github.com/casey/just) (or try install with Node.js with `npm install -g just-install`)

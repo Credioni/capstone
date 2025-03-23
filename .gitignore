@@ -24,3 +24,6 @@ pnpm-lock*
 *.wav
 *.jpg
 *.png
+#
+*docker*
+gpu_check.py
