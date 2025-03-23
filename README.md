@@ -8,12 +8,7 @@
 
 
 ## Basic Idea
-RAG models primarily focus on text-based retrieval, limiting their effectiveness in multimedia
-applications. This project enhances RAG with multimodal retrieval by incorporating image, video, and
-text embeddings. By integrating image and text embeddings in queries, the system enables faster and
-more efficient retrieval, even on low-bandwidth networks. The use of compact embeddings ensures
-quick access to relevant multimedia content, making AI-generated responses more contextually rich
-and diverse
+RAG models primarily focus on text-based retrieval, limiting their effectiveness in multimedia applications. This project enhances RAG with multimodal retrieval by incorporating image, video, and text embeddings. By integrating image and text embeddings in queries, the system enables faster and more efficient retrieval **for retrieving textual context** -from arXiv-embeddings. With even on low-bandwidth networks. The use of compact embeddings ensures quick access to relevant multimedia content, making AI-generated responses more contextually rich and diverse.
 
 Create a scientific research assistant that retrieves related text, images, and videos from academic
 papers.
@@ -73,7 +68,13 @@ just run-back
 **Backend Handler** - Handles queue's request's from **frontend**\
 `api_queue.py`
 
-# Technologies and Tecniques used
+# About - FAISS
+ - **Textual** -embeddings contains around [2.7million arXiv research paper](https://www.kaggle.com/datasets/Cornell-University/arxiv) -collected 03/2025, indexed using paper's title & abstract -collected.
+ - **Image & Sound** -embeddings contains mainly debug data.
+ - **Video** -embeddings contains data from **3Blue1Brown** youtube channel, indexed using (title and transcription data) + (average index of frames).
+
+# About - Technologies and Tecniques used
+
 ## Frontend
 1. `React.js` - with **Typescript**, **Rsbuild** with **Tailwindcss**.
 2. `Material UI` - components of frontend.
