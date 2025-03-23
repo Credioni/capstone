@@ -47,13 +47,13 @@ cd frontend
 pnpm install
 ```
 
-## Test everything works
+# Test zero-shot
 **Test that the FAISS retrieving is working using zero-shot**
 ```bash
 just zero-shot
 # cd backend/RAGembedder | py -3.12 .\zero_shot.py
 ```
-
+# Running
 **Start Frontend & Backend:**
 ```bash
 just run-front
@@ -79,9 +79,7 @@ just run-back
 2. `Material UI` - components of frontend.
 3. [SVG -noise](https://css-tricks.com/grainy-gradients/)
 
-
 ## Backend
-Tecniques and Matrial arts used
-1. [HTTP caching]() -for fast request retrival.
-2. [RAG-retrival]() caching.
-3. [Multithreading]() & [Hash-Cache]() for even faster faiss-retrival.
+1. [HTTP caching]() - requests are **hash-cached** based on content.
+2. [RAG-retrival]() & [LLM-generation]() - hash-caching.
+3. [Multithreading]() -for even faster speed.

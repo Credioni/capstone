@@ -13,7 +13,7 @@ install-front:
     cd frontend | pnpm build
 
 install-backend:
-    pip install -r requirements.txt
+    py -3.12 -m pip install -r requirements.txt
 
 retrieve-faiss:
     py -3.12 .\retrieve-faiss.py
