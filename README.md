@@ -6,6 +6,7 @@
 | ✅Planning    | ✅Model + UI Skeletons | ✅Integration |  ✅Polishing   |
 # Project 17: Multimedia Large Language Model Applications with Multimedia Embedding RAG
 
+
 ## Basic Idea
 RAG models primarily focus on text-based retrieval, limiting their effectiveness in multimedia
 applications. This project enhances RAG with multimodal retrieval by incorporating image, video, and
@@ -18,22 +19,36 @@ Create a scientific research assistant that retrieves related text, images, and 
 papers.
 
 ## Requirements & Installation [Justfile](https://github.com/casey/just)
-Node.js \
-Python version: `Python 3.12`
-```
-pip install faiss-cpu torch transformers sentence-transformers langchain langchain_huggingface pypdf pydantic pillow robyn colorlog
+Make sure these are installed:\
+1. [Node.js](https://nodejs.org/en)
+2. [Python 3.12.X](https://www.python.org/downloads/)
+3. Recommended [Justfile](https://github.com/casey/just) (or try install with Node.js with `npm install -g just-install`)
+
+
+## Setup with `just`
+
+Using `just` you can **install**, **build**, and retrive **faiss embeddings** using command:
+```just
+just setup-all
 ```
 
-**Get faiss-embeddings from HuggingFace:**
+## Setup without `just`
+**Install backend dependencies**
 ```bash
-python ./retrieve-faiss.py
+py -3.12 -m pip install -r requirements.txt
+```
+**Retrieve FAISS indices from HuggingFace**
+```bash
+py -3.12 .\retrieve-faiss.py
 ```
 **Install node-packages**
 ```
-just install
-# cd frontend/react-web | pnpm install
+cd frontend
+pnpm install
 ```
-**Test system is working with zero-shot**
+
+## Test everything works
+**Test that the FAISS retrieving is working using zero-shot**
 ```bash
 just zero-shot
 # cd backend/RAGembedder | py -3.12 .\zero_shot.py
@@ -49,27 +64,20 @@ just run-back
 # cd backend | py -3.12 .\api.py
 ```
 # Main files of the System
-Contains all the information handling the faiss queries.
-```
-multi_modal_embedder.py
-```
-Handles the LLM powered with RAG generation
-```
-arxiv_rag_system.py
-```
-Contains all the logic behind backend and handling the `faiss-embedding class` and `rag-system calls`.
-```
-api_queue.py
-```
+**FAISS** -contains all the handling and searching embeddings of indices:\
+`multi_modal_embedder.py`
+
+**LLM** -handles answer generation\
+`arxiv_rag_system.py`
+
+**Backend Handler** - Handles queue's request's from **frontend**\
+`api_queue.py`
 
 # Technologies and Tecniques used
 ## Frontend
- - Main framework `React.js` with Typescript, `Rsbuild` with `Tailwindcss`.
-
-Tecniques used
-1. [SVG -noise](https://css-tricks.com/grainy-gradients/) for more natural looking UI.
-2. [Material UI]().
-3. [Tailwindcss]().
+1. `React.js` - with **Typescript**, **Rsbuild** with **Tailwindcss**.
+2. `Material UI` - components of frontend.
+3. [SVG -noise](https://css-tricks.com/grainy-gradients/)
 
 
 ## Backend

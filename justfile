@@ -2,6 +2,24 @@
 set shell := ["powershell.exe", "-c"]
 
 
+
+setup-all:
+    just install-front
+    just install-backend
+    just retrieve-faiss
+
+install-front:
+    cd frontend | pnpm install
+    cd frontend | pnpm build
+
+install-backend:
+    pip install -r requirements.txt
+
+retrieve-faiss:
+    py -3.12 .\retrieve-faiss.py
+
+##############################
+
 # Resets and builds the embeddings except arxiv paper
 build-faiss:
     cd backend/RAGembedder | py -3.12 .\build.py
@@ -17,24 +35,13 @@ run-back:
 dev-back:
     cd backend | py -3.12 -m robyn .\api.py --dev
 
-
-
 run-front:
-    cd frontend | pnpm run
+    just dev-front
 
 # Run frontend with dev mode
 dev-front:
     cd frontend | pnpm run dev
 
-clear:
-    rd /s /q node_modules | del package-lock.json
-
-install:
-    cd frontend/react-web | pnpm install
-
-clear-install:
-  just clear
-  just install
 
 # Get line count of all subdirectories, including .git-folder.
 linecount type:

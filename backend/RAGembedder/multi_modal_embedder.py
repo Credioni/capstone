@@ -72,7 +72,7 @@ class MultimodalEmbedder:
     text_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     clip_model_name: str = "openai/clip-vit-base-patch32"
     whisper_model_name: str = "openai/whisper-tiny.en"
-    index_directory: str = "faiss_indices"
+    index_directory: str = "faiss"
 
     # Fields initialized in __post_init__
     text_dim:  int = field(init=False)
