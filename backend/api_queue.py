@@ -154,10 +154,6 @@ class QueryHandler:
         logger.info(f"Queue pushed hash {str(hash)}")
         self.faiss_queue.add(hash)
 
-    # def search_faiss(self, hash: Hash, **kwargs):
-    #     query_json = self.get_query_json(hash)
-    #     self.embedder.search(query="text")
-
     def register_faiss_result(self, hash: Hash, result, answer=None):
         self._change_status(hash, QueueStatus.FAISS)
         self.save_result_json(hash, result, answer)

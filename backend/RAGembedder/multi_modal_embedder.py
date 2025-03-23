@@ -165,7 +165,8 @@ class MultimodalEmbedder:
         """
         # Generate embeddings for each query type if available
         embeddings = {}
-        results = {"audio_transcript": None}  # Initialize results
+        # Initialize results
+        results = {"audio_transcript": None}
 
         # Process text query
         if query_text := query.get("text"):
