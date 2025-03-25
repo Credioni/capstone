@@ -13,13 +13,15 @@ RAG models primarily focus on text-based retrieval, limiting their effectiveness
 
 
 ## 1.2 Installation Instructions
+The following **Instructions** where tested in Windows 11 enviroment.
+
 Make sure these are installed in the system, if not already:
 1. [Node.js](https://nodejs.org/en)
 2. [pnpm](https://pnpm.io/installation) or try with `npm install -g pnpm`
-3. [Python 3.12.9](https://www.python.org/downloads/) tested in the 3.12.19 version.
-4. Recommended [Justfile](https://github.com/casey/just)
+3. [Python 3.12.9](https://www.python.org/downloads/) tested in the 3.12.19 version
+4. Recommended [Justfile](https://github.com/casey/just) -not mandatory
 
-If your system does not hae python and node installed, we recommended that you reboot your system.
+*If your system does not hae python and node installed, we recommended that you reboot your system.*
 
 ## Setup with `just`
 
@@ -60,7 +62,7 @@ just run-back
 ```bash
 just
 just run-front
-# commnad runs: cd frontend | pnpm run
+# commnad runs: cd frontend | pnpm run dev
 ```
 
 Starting the frontend, open's up a browser to interact with the system!

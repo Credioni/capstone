@@ -64,7 +64,7 @@ export default function SearchBar() {
         } catch (error) {
             console.error('Error performing search:', error);
             // Handle error - you could show an error message to the user
-            setErrorMessage('There was an error performing your search. Please try again.');
+            setErrorMessage('There was an error performing your search. Maybe connection error...');
         } finally {
             setIsSearching(false);
         }
