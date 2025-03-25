@@ -1,24 +1,27 @@
 # pylint: disable=all
-import os
-import logging
-# from RAG import ArXivRAGSystem
-####################### ENDPOINT HANDLING ####################
-from robyn import Robyn, ALLOW_CORS
-from robyn.robyn import Request, QueryParams
-app = Robyn(__file__)
 ####################### API OF APIS ####################
 from api_queue import QueryHandler
 from api_dirty import init_logger, process_images, process_audio
+
+import logging
+logger = logging.getLogger(__name__)
+init_logger(logger)
+
+####################### ENDPOINT HANDLING ####################
+
+from robyn import Robyn, ALLOW_CORS
+from robyn.robyn import Request, QueryParams
+app = Robyn(__file__)
+
 ####################### CORS ####################
+
 ALLOW_CORS(app, origins=[
     "http://localhost:3000", # If running just normal enviroment
     "http://frontend:3000",  # For Docker service-to-service communication
     "http://127.0.0.1:3000"  # Fallback for local development
 ])
 # ALLOW_CORS(app, origins = ["http://localhost:3000"])
-####################### LOGGING ####################
-logger = logging.getLogger(__name__)
-init_logger(logger)
+
 ####################### BACKEND API CALL INTERFACE ####################
 
 # Handles the queries - all the magic of the Backend

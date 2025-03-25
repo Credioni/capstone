@@ -1,5 +1,5 @@
 # Core dependencies with exact versions
-torch==2.6.0+cu124
+#torch>=2.6.0
 faiss-cpu==1.10.0
 transformers==4.48.1
 datasets==3.2.0

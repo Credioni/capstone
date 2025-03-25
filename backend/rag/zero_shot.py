@@ -1,5 +1,6 @@
 #pylint: disable=all
 import json
+print("Loading multi modal embedder") # GOnna take a some time...
 from multi_modal_embedder import MultimodalEmbedder
 
 def zero_shot(query, **kwargs):

@@ -68,7 +68,7 @@ def process_audio(audio_list, logger):
             audio_data = {
                 "id": audio_info.get("id", ""),
                 "path": audio_info["path"],
-                "base64": audio_to_base64(os.path.join("RAGembedder", audio_info["path"])),
+                "base64": audio_to_base64(os.path.join("rag", audio_info["path"])),
                 # e.g., "audio/mp3", "audio/wav"
                 "mime_type": f"audio/{ext}",
                 "transcript": audio_info.get("transcript", ""),

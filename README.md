@@ -15,9 +15,11 @@ RAG models primarily focus on text-based retrieval, limiting their effectiveness
 ## 1.2 Installation Instructions
 Make sure these are installed in the system, if not already:
 1. [Node.js](https://nodejs.org/en)
-2. [Python 3.12.X](https://www.python.org/downloads/)
-3. Recommended [Justfile](https://github.com/casey/just) (fast-install with Node.js `npm install -g just-install`)
+2. [pnpm](https://pnpm.io/installation) or try with `npm install -g pnpm`
+3. [Python 3.12.9](https://www.python.org/downloads/) tested in the 3.12.19 version.
+4. Recommended [Justfile](https://github.com/casey/just)
 
+If your system does not hae python and node installed, we recommended that you reboot your system.
 
 ## Setup with `just`
 
@@ -56,6 +58,7 @@ just run-back
 # cd backend | py -3.12 .\api.py
 ```
 ```bash
+just
 just run-front
 # cd frontend | pnpm run
 ```
