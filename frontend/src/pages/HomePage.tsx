@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import "./HomePage.css"
-import SearchBar from '../components/SearchBar';
-import QuicLinks from '../components/QuickLinks';
+import SearchBar from './homepage/SearchBar';
+import QuicLinks from './homepage/QuickLinks';
 
 
 function HomePage() {
