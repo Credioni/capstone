@@ -17,7 +17,7 @@ sources, example from ArXiv.
 
 ### Backend
 1. [LangChain](https://www.langchain.com) - Creating LLM and multi-media pipeline.
-2. [Faiss](https://github.com/facebookresearch/faiss) - for dense vector-storage embeddings.
+2. [Faiss](https://github.com/facebookresearch/faiss) - for dense vector-storage embeddings (used in the project).
 
 [Logging]() - Backend implements error handling and terminal logging, with traceback. \
 [HTTP caching]() - Multimedia requests are **hash-cached**.\
