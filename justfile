@@ -22,11 +22,11 @@ retrieve-faiss:
 
 # Resets and builds the embeddings except arxiv paper
 build-faiss:
-    cd backend/RAGembedder | py -3.12 .\build.py
+    cd backend/rag | py -3.12 .\build.py
 
 # Zero-shot to test that embeddings work
 zero-shot:
-    cd backend/RAGembedder | py -3.12 .\zero_shot.py
+    cd backend/rag | py -3.12 .\zero_shot.py
 
 # Run backend with dev mode
 run-back:

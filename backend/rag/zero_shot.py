@@ -3,9 +3,11 @@ import json
 from multi_modal_embedder import MultimodalEmbedder
 
 def zero_shot(query, **kwargs):
+    print("Initializing multimodel embedder")
     embedder = MultimodalEmbedder()
     embedder.load_indices()
 
+    print("Making a search")
     result = embedder.search(query=query, **kwargs)
 
     # Pretty print

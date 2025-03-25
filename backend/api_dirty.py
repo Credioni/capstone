@@ -10,7 +10,7 @@ from PIL import Image
 from enum import Enum
 from typing import List
 
-from RAGembedder.multi_modal_embedder import ImageMetadata
+from rag.multi_modal_embedder import ImageMetadata
 import logging
 from enum import Enum
 logger = logging.getLogger(__name__)

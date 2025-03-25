@@ -7,13 +7,13 @@ import hashlib
 import time
 import threading
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from robyn import Request
 import logging
 import traceback
 
-from RAGembedder.arxiv_rag_system import ArXivRAGSystem
-from RAGembedder.multi_modal_embedder import MultimodalEmbedder
+from rag.arxiv_rag_system import ArXivRAGSystem
+from rag.multi_modal_embedder import MultimodalEmbedder
 
 from api_dirty import EnumEncoder, init_logger, handle_formdata_save
 logger = logging.getLogger(__name__)
@@ -37,9 +37,16 @@ class QueryHandler:
     faiss_queue: set[int] = field(default_factory=set)
     rag_queue: set[int] = field(default_factory=set)
     # Define where to save everything
-    query_path:  os.PathLike = field(default="query")
-    upload_path: os.PathLike = field(default="uploads")
-    result_path: os.PathLike = field(default="faiss_results")
+    cache_path: os.PathLike  = field(default="cache")
+    ## Each dir below is beholded in cache folder
+    query_dir: InitVar[str] = "query"
+    upload_dir: InitVar[str] = "uploads"
+    result_dir: InitVar[str] = "faiss_results"
+
+    ## Post-initialized
+    query_path: os.PathLike  = field(init=False)
+    upload_path: os.PathLike = field(init=False)
+    result_path: os.PathLike = field(init=False)
 
     embedder:MultimodalEmbedder = field(default=None)
     embedder_thread:threading.Thread = field(default=None)
@@ -47,8 +54,16 @@ class QueryHandler:
     rag:ArXivRAGSystem = field(default=None)
     rag_thread:threading.Thread = field(default=None)
 
+    def __post_init__(self, query_dir, upload_dir, result_dir):
+        self.cache_path = os.fspath(self.cache_path)
+        os.makedirs(self.cache_path, exist_ok=True)
 
-    def __post_init__(self):
+        # Construct paths
+        self.query_path = os.path.join(self.cache_path, os.fspath(query_dir))
+        self.upload_path = os.path.join(self.cache_path, os.fspath(upload_dir))
+        self.result_path = os.path.join(self.cache_path, os.fspath(result_dir))
+
+        # Create directories if they don’t exist
         os.makedirs(self.query_path, exist_ok=True)
         os.makedirs(self.upload_path, exist_ok=True)
         os.makedirs(self.result_path, exist_ok=True)

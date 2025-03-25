@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 class ArXivRAGSystem:
     """
-    An enhanced RAG (Retrieval-Augmented Generation) system for arXiv papers
-    and multi-media scientific content with improved prompt engineering and
-    error handling.
+    An enhanced RAG (Retrieval-Augmented Generation) system for textual context
+    in ArXiv research paper and multi-media scientific content with
+    improved prompt engineering and error handling.
     """
 
     def __init__(self, _config: Dict[str, str]=None):
