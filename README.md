@@ -48,19 +48,19 @@ pnpm install
 **Test that the FAISS retrieving is working using zero-shot**
 ```bash
 just zero-shot
-# cd backend/rag | py -3.12 .\zero_shot.py
+# commnad runs: cd backend/rag | py -3.12 .\zero_shot.py
 ```
 
 ## Running
 **Start Frontend & Backend in separate terminals**
 ```bash
 just run-back
-# cd backend | py -3.12 .\api.py
+# commnad runs: cd backend | py -3.12 .\api.py
 ```
 ```bash
 just
 just run-front
-# cd frontend | pnpm run
+# commnad runs: cd frontend | pnpm run
 ```
 
 Starting the frontend, open's up a browser to interact with the system!

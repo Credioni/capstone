@@ -14,6 +14,7 @@ def zero_shot(query, **kwargs):
     # Pretty print
     json_formatted_str = json.dumps(result, indent=2)
     print(json_formatted_str)
+    print("You should get json with lots of ")
 
 
 if __name__=="__main__":
