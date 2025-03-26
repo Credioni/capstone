@@ -110,7 +110,7 @@ def process_images(images: List[ImageMetadata], logger):
     for image in images:
         try:
             # Load the image with OpenCV
-            img_path = os.path.join("RAGembedder", image["path"])
+            img_path = os.path.join("rag", image["path"])
             cv_img = cv2.imread(img_path)
 
             if cv_img is None:

@@ -36,6 +36,7 @@ dev-back:
     cd backend | py -3.12 -m robyn .\api.py --dev
 
 run-front:
+    cd frontend | pnpm install
     cd frontend | pnpm build
     just dev-front
 

@@ -47,7 +47,7 @@ async def query(request: Request):
 
 @app.get("/result")
 async def result_status(_request: Request, query_params: QueryParams):
-    logger.info(query_params)
+    # logger.info(query_params)
 
     if (hash := query_params.get("q")) is not None:
         result = QUERY_HANDLER.get_result_json(hash) or {}
